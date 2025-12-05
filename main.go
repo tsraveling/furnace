@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	tea "github.com/charmbracelet/bubbletea"
 	"gopkg.in/ini.v1"
 	"os"
@@ -11,9 +10,12 @@ import (
 type model struct {
 	ww int
 	wh int
+
+	// Config options
+	homeFolder string
 }
 
-func (m model) readConfig() {
+func (m *model) readConfig() tea.Model {
 	// Get home
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -30,18 +32,13 @@ func (m model) readConfig() {
 	}
 
 	// Read values
-	fmt.Println("Reading test section of config.ini:")
-	section := cfg.Section("test")
-	value := section.Key("someValue").String()
-	fmt.Println(value)
+	section := cfg.Section("general")
+	m.homeFolder = section.Key("homeFolder").String()
 
-	// Or with a default value
-	// port := section.Key("port").MustInt(8080)
-	// fmt.Println(port)
+	return m
 }
 
 func (m model) Init() tea.Cmd {
-	m.readConfig()
 	return nil
 }
 
@@ -60,10 +57,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
-	return "hello world"
+	return "hello world! Your home folder is: " + m.homeFolder
 }
 
 func main() {
-	p := tea.NewProgram(model{})
+	m := model{}
+	m.readConfig()
+	p := tea.NewProgram(m)
 	p.Run()
 }
