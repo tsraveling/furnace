@@ -15,13 +15,20 @@ func (m pickerModel) Init() tea.Cmd {
 	return nil
 }
 
-func (m pickerModel) Update(msg tea.Msg, db *FoodDB) (pickerModel, tea.Cmd) {
+func (m pickerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "ctrl+c", "q":
+			return m, tea.Quit
+		}
+	}
 	return m, nil
 }
 
-func (m pickerModel) View(db *FoodDB) string {
+func (m pickerModel) View() string {
 	ret := "Food:\n"
-	for _, item := range db.All() {
+	for _, item := range cfg.foodDB.All() {
 		ret += item.Name + "\n"
 	}
 	return ret
