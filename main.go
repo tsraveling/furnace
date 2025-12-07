@@ -65,6 +65,7 @@ func readConfig() config {
 func main() {
 	cfg = readConfig()
 
-	p := tea.NewProgram(pickerModel{})
+	m, _ := foodPicker()
+	p := tea.NewProgram(m)
 	p.Run()
 }

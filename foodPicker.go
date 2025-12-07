@@ -11,6 +11,11 @@ type pickerModel struct {
 	item string
 }
 
+func foodPicker() (pickerModel, tea.Cmd) {
+	m := pickerModel{}
+	return m, m.Init()
+}
+
 func (m pickerModel) Init() tea.Cmd {
 	return nil
 }
