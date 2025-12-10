@@ -1,18 +1,87 @@
 package main
 
 import (
+	"fmt"
+	"io"
+	"strings"
 
-	// "github.com/charmbracelet/bubbles/list"
+	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
-	// "github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/lipgloss"
 )
 
+var (
+	titleStyle = lipgloss.NewStyle().
+			Bold(true).
+			Foreground(lipgloss.Color("205")).
+			MarginLeft(2)
+
+	itemStyle = lipgloss.NewStyle().
+			PaddingLeft(4)
+
+	selectedItemStyle = lipgloss.NewStyle().
+				PaddingLeft(2).
+				Foreground(lipgloss.Color("170"))
+
+	paginationStyle = lipgloss.NewStyle().
+			PaddingLeft(4)
+
+	helpStyle = lipgloss.NewStyle().
+			PaddingLeft(4).
+			Foreground(lipgloss.Color("241"))
+)
+
+const listHeight = 14
+
+// SECTION: List delegate
+func (i FoodItem) FilterValue() string { return i.Name }
+
+type itemDelegate struct{}
+
+func (d itemDelegate) Height() int                             { return 1 }
+func (d itemDelegate) Spacing() int                            { return 0 }
+func (d itemDelegate) Update(_ tea.Msg, _ *list.Model) tea.Cmd { return nil }
+func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
+	i, ok := listItem.(FoodItem)
+	if !ok {
+		return
+	}
+
+	str := fmt.Sprintf("%s", i.Name)
+
+	fn := itemStyle.Render
+	if index == m.Index() {
+		fn = func(s ...string) string {
+			return selectedItemStyle.Render("> " + strings.Join(s, " "))
+		}
+	}
+
+	fmt.Fprint(w, fn(str))
+}
+
+// SECTION: Core model and view
 type pickerModel struct {
-	item string
+	list   list.Model
+	choice string
 }
 
 func foodPicker() (pickerModel, tea.Cmd) {
-	m := pickerModel{}
+	const defaultWidth = 20
+
+	items := cfg.foodDB.All()
+	listItems := make([]list.Item, len(items))
+	for i, item := range items {
+		listItems[i] = item
+	}
+
+	l := list.New(listItems, itemDelegate{}, defaultWidth, listHeight)
+	l.Title = "Item to log?"
+	l.SetShowStatusBar(false)
+	l.SetFilteringEnabled(false)
+	l.Styles.Title = titleStyle
+	l.Styles.PaginationStyle = paginationStyle
+	l.Styles.HelpStyle = helpStyle
+	m := pickerModel{list: l}
 	return m, m.Init()
 }
 
@@ -22,21 +91,30 @@ func (m pickerModel) Init() tea.Cmd {
 
 func (m pickerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.list.SetWidth(msg.Width)
+
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "ctrl+c", "q":
+		switch keypress := msg.String(); keypress {
+		case "q", "ctrl+c":
+			// m.quitting = true
+			return m, tea.Quit
+
+		case "enter":
+			i, ok := m.list.SelectedItem().(FoodItem)
+			if ok {
+				m.choice = i.Name
+			}
 			return m, tea.Quit
 		}
 	}
-	return m, nil
+	var cmd tea.Cmd
+	m.list, cmd = m.list.Update(msg)
+	return m, cmd
 }
 
 func (m pickerModel) View() string {
-	ret := "Food:\n"
-	for _, item := range cfg.foodDB.All() {
-		ret += item.Name + "\n"
-	}
-	return ret
+	return "Food:\n" + m.list.View()
 }
 
 /*
