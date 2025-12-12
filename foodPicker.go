@@ -6,29 +6,9 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/bubbles/list"
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-)
-
-var (
-	titleStyle = lipgloss.NewStyle().
-			Bold(true).
-			Foreground(lipgloss.Color("205")).
-			MarginLeft(2)
-
-	itemStyle = lipgloss.NewStyle().
-			PaddingLeft(4)
-
-	selectedItemStyle = lipgloss.NewStyle().
-				PaddingLeft(2).
-				Foreground(lipgloss.Color("170"))
-
-	paginationStyle = lipgloss.NewStyle().
-			PaddingLeft(4)
-
-	helpStyle = lipgloss.NewStyle().
-			PaddingLeft(4).
-			Foreground(lipgloss.Color("241"))
 )
 
 const listHeight = 14
@@ -61,27 +41,37 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 
 // SECTION: Core model and view
 type pickerModel struct {
-	list   list.Model
-	choice string
+	list     list.Model
+	input    textinput.Model
+	allItems []list.Item
+	choice   string
 }
 
 func foodPicker() (pickerModel, tea.Cmd) {
 	const defaultWidth = 20
 
 	items := cfg.foodDB.All()
-	listItems := make([]list.Item, len(items))
+	allItems := make([]list.Item, len(items))
 	for i, item := range items {
-		listItems[i] = item
+		allItems[i] = item
 	}
 
-	l := list.New(listItems, itemDelegate{}, defaultWidth, listHeight)
+	lh := min(len(items)+4, listHeight)
+
+	l := list.New(allItems, itemDelegate{}, defaultWidth, lh)
 	l.Title = "Item to log?"
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(false)
 	l.Styles.Title = titleStyle
 	l.Styles.PaginationStyle = paginationStyle
-	l.Styles.HelpStyle = helpStyle
-	m := pickerModel{list: l}
+	l.SetShowHelp(false)
+
+	ti := textinput.New()
+	ti.Placeholder = "Start typing to filter ..."
+	ti.Focus()
+	ti.CharLimit = 128
+
+	m := pickerModel{list: l, allItems: allItems, input: ti}
 	return m, m.Init()
 }
 
@@ -89,15 +79,30 @@ func (m pickerModel) Init() tea.Cmd {
 	return nil
 }
 
+func (m *pickerModel) filterList() {
+	query := strings.ToLower(m.input.Value())
+	if query == "" {
+		m.list.SetItems(m.allItems)
+		return
+	}
+	filtered := []list.Item{}
+	for _, item := range m.allItems {
+		if strings.Contains(strings.ToLower(item.FilterValue()), query) {
+			filtered = append(filtered, item)
+		}
+	}
+	m.list.SetItems(filtered)
+}
+
 func (m pickerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.list.SetWidth(msg.Width)
+		m.input.Width = msg.Width
 
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
-		case "q", "ctrl+c":
-			// m.quitting = true
+		case "esc", "ctrl+c":
 			return m, tea.Quit
 
 		case "enter":
@@ -106,122 +111,43 @@ func (m pickerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.choice = i.Name
 			}
 			return m, tea.Quit
+		case "up", "down":
+			var cmd tea.Cmd
+			m.list, cmd = m.list.Update(msg)
+			return m, cmd
 		}
 	}
+
+	// Text input gets the end of it
 	var cmd tea.Cmd
-	m.list, cmd = m.list.Update(msg)
+	m.input, cmd = m.input.Update(msg)
+
+	// Filter
+	m.filterList()
 	return m, cmd
 }
 
 func (m pickerModel) View() string {
-	return "Food:\n" + m.list.View()
+	help := helpStyle.Render("↑/↓: move • enter: select • esc: quit")
+	return fmt.Sprintf("Food:\n\n%s\n\n%s\n\n%s", m.list.View(), m.input.View(), help)
 }
 
-/*
-const listHeight = 14
+var (
+	titleStyle = lipgloss.NewStyle().
+			Bold(true).
+			Foreground(lipgloss.Color("205")).
+			MarginLeft(2)
 
-type item string
+	itemStyle = lipgloss.NewStyle().
+			PaddingLeft(4)
 
-func (i item) FilterValue() string { return "" }
+	selectedItemStyle = lipgloss.NewStyle().
+				PaddingLeft(2).
+				Foreground(lipgloss.Color("170"))
 
-type itemDelegate struct{}
+	paginationStyle = lipgloss.NewStyle().
+			PaddingLeft(4)
 
-func (d itemDelegate) Height() int                             { return 1 }
-func (d itemDelegate) Spacing() int                            { return 0 }
-func (d itemDelegate) Update(_ tea.Msg, _ *list.Model) tea.Cmd { return nil }
-func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
-	i, ok := listItem.(item)
-	if !ok {
-		return
-	}
-
-	str := fmt.Sprintf("%d. %s", index+1, i)
-
-	fn := itemStyle.Render
-	if index == m.Index() {
-		fn = func(s ...string) string {
-			return selectedItemStyle.Render("> " + strings.Join(s, " "))
-		}
-	}
-
-	fmt.Fprint(w, fn(str))
-}
-
-type model struct {
-	list     list.Model
-	choice   string
-	quitting bool
-}
-
-func (m model) Init() tea.Cmd {
-	return nil
-}
-
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
-		m.list.SetWidth(msg.Width)
-		return m, nil
-
-	case tea.KeyMsg:
-		switch keypress := msg.String(); keypress {
-		case "q", "ctrl+c":
-			m.quitting = true
-			return m, tea.Quit
-
-		case "enter":
-			i, ok := m.list.SelectedItem().(item)
-			if ok {
-				m.choice = string(i)
-			}
-			return m, tea.Quit
-		}
-	}
-
-	var cmd tea.Cmd
-	m.list, cmd = m.list.Update(msg)
-	return m, cmd
-}
-
-func (m model) View() string {
-	if m.choice != "" {
-		return quitTextStyle.Render(fmt.Sprintf("%s? Sounds good to me.", m.choice))
-	}
-	if m.quitting {
-		return quitTextStyle.Render("Not hungry? That’s cool.")
-	}
-	return "\n" + m.list.View()
-}
-
-func main() {
-	items := []list.Item{
-		item("Ramen"),
-		item("Tomato Soup"),
-		item("Hamburgers"),
-		item("Cheeseburgers"),
-		item("Currywurst"),
-		item("Okonomiyaki"),
-		item("Pasta"),
-		item("Fillet Mignon"),
-		item("Caviar"),
-		item("Just Wine"),
-	}
-
-	const defaultWidth = 20
-
-	l := list.New(items, itemDelegate{}, defaultWidth, listHeight)
-	l.Title = "What do you want for dinner?"
-	l.SetShowStatusBar(false)
-	l.SetFilteringEnabled(false)
-	l.Styles.Title = titleStyle
-	l.Styles.PaginationStyle = paginationStyle
-	l.Styles.HelpStyle = helpStyle
-
-	m := model{list: l}
-
-	if _, err := tea.NewProgram(m).Run(); err != nil {
-		fmt.Println("Error running program:", err)
-		os.Exit(1)
-	}
-}
-*/
+	helpStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("240"))
+)
