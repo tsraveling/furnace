@@ -41,10 +41,11 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 
 // SECTION: Core model and view
 type pickerModel struct {
-	list     list.Model
-	input    textinput.Model
-	allItems []list.Item
-	choice   string
+	list          list.Model
+	input         textinput.Model
+	allItems      []list.Item
+	hasExactMatch bool
+	choice        string
 }
 
 func foodPicker() (pickerModel, tea.Cmd) {
@@ -86,12 +87,21 @@ func (m *pickerModel) filterList() {
 		return
 	}
 	filtered := []list.Item{}
+	m.hasExactMatch = false
 	for _, item := range m.allItems {
-		if strings.Contains(strings.ToLower(item.FilterValue()), query) {
+		filterVal := strings.ToLower(item.FilterValue())
+		if strings.Contains(filterVal, query) {
+			if filterVal == query {
+				m.hasExactMatch = true
+			}
 			filtered = append(filtered, item)
 		}
 	}
 	m.list.SetItems(filtered)
+}
+
+func (m *pickerModel) canCreate() bool {
+	return len(m.input.Value()) > 0 && !m.hasExactMatch
 }
 
 func (m pickerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -128,7 +138,17 @@ func (m pickerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m pickerModel) View() string {
-	help := helpStyle.Render("↑/↓: move • enter: select • esc: quit")
+	help_text := "↑/↓: move • enter: select • esc: quit"
+	if len(m.input.Value()) > 0 {
+		if m.hasExactMatch {
+			help_text += "\n(this item exists)"
+		} else {
+			help_text += "\nshift+enter: create \"" + m.input.Value() + "\""
+		}
+	} else {
+		help_text += "\n(type, then shift+enter: create new item)"
+	}
+	help := helpStyle.Render(help_text)
 	return fmt.Sprintf("Food:\n\n%s\n\n%s\n\n%s", m.list.View(), m.input.View(), help)
 }
 
