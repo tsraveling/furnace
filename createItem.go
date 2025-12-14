@@ -5,20 +5,20 @@ import (
 	// "github.com/charmbracelet/lipgloss"
 )
 
-type viewModel struct {
-	someValue string
+type createItemModel struct {
+	initialName string
 }
 
-func makeViewModel() (viewModel, tea.Cmd) {
-	m := viewModel{someValue: "example"}
+func makeCreateItemModel(n string) (createItemModel, tea.Cmd) {
+	m := createItemModel{initialName: n}
 	return m, m.Init()
 }
 
-func (m viewModel) Init() tea.Cmd {
+func (m createItemModel) Init() tea.Cmd {
 	return nil
 }
 
-func (m viewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m createItemModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	//	case tea.WindowSizeMsg:
 	//		m.list.SetWidth(msg.Width)
@@ -38,8 +38,8 @@ func (m viewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m viewModel) View() string {
-	return "hello, world"
+func (m createItemModel) View() string {
+	return "hello, world. Initial name: " + m.initialName
 }
 
 // var (

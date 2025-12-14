@@ -101,7 +101,7 @@ func (m *pickerModel) filterList() {
 }
 
 func (m *pickerModel) canCreate() bool {
-	return len(m.input.Value()) > 0 && !m.hasExactMatch
+	return !m.hasExactMatch
 }
 
 func (m pickerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -114,6 +114,13 @@ func (m pickerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch keypress := msg.String(); keypress {
 		case "esc", "ctrl+c":
 			return m, tea.Quit
+
+		case "ctrl+n":
+			if !m.canCreate() {
+				break
+			}
+			// -> Make Item flow
+			return makeCreateItemModel(m.input.Value())
 
 		case "enter":
 			i, ok := m.list.SelectedItem().(FoodItem)
@@ -143,10 +150,10 @@ func (m pickerModel) View() string {
 		if m.hasExactMatch {
 			help_text += "\n(this item exists)"
 		} else {
-			help_text += "\nshift+enter: create \"" + m.input.Value() + "\""
+			help_text += "\nctrl+n: create \"" + m.input.Value() + "\""
 		}
 	} else {
-		help_text += "\n(type, then shift+enter: create new item)"
+		help_text += "\nctrl+n: create new item"
 	}
 	help := helpStyle.Render(help_text)
 	return fmt.Sprintf("Food:\n\n%s\n\n%s\n\n%s", m.list.View(), m.input.View(), help)
