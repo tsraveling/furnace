@@ -16,6 +16,13 @@ type config struct {
 
 	// Loaded at beginning
 	foodDB *FoodDB
+
+	// Window width
+	ww int
+}
+
+func (c *config) fullWidth() int {
+	return c.ww - 8
 }
 
 var cfg config
@@ -48,7 +55,7 @@ func readConfig() config {
 	}
 
 	// Read values
-	ret := config{}
+	ret := config{ww: 30}
 	section := cfg_file.Section("general")
 	ret.homeFolder = expandPath(section.Key("homeFolder").String())
 

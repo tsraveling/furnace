@@ -8,7 +8,6 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
 
 const listHeight = 14
@@ -29,10 +28,10 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 
 	str := fmt.Sprintf("%s", i.Name)
 
-	fn := itemStyle.Render
+	fn := ItemStyle.Render
 	if index == m.Index() {
 		fn = func(s ...string) string {
-			return selectedItemStyle.Render("> " + strings.Join(s, " "))
+			return SelectedItemStyle.Render("> " + strings.Join(s, " "))
 		}
 	}
 
@@ -46,6 +45,7 @@ type pickerModel struct {
 	allItems      []list.Item
 	hasExactMatch bool
 	choice        string
+	ww            int
 }
 
 func foodPicker() (pickerModel, tea.Cmd) {
@@ -63,14 +63,16 @@ func foodPicker() (pickerModel, tea.Cmd) {
 	l.Title = "Item to log?"
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(false)
-	l.Styles.Title = titleStyle
-	l.Styles.PaginationStyle = paginationStyle
+	l.Styles.Title = TitleStyle
+	l.Styles.PaginationStyle = PaginationStyle
 	l.SetShowHelp(false)
+	l.SetWidth(cfg.fullWidth())
 
 	ti := textinput.New()
 	ti.Placeholder = "Start typing to filter ..."
 	ti.Focus()
 	ti.CharLimit = 128
+	ti.Width = cfg.fullWidth()
 
 	m := pickerModel{list: l, allItems: allItems, input: ti}
 	return m, m.Init()
@@ -107,8 +109,9 @@ func (m *pickerModel) canCreate() bool {
 func (m pickerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		m.list.SetWidth(msg.Width)
-		m.input.Width = msg.Width
+		cfg.ww = msg.Width
+		m.list.SetWidth(cfg.fullWidth())
+		m.input.Width = cfg.fullWidth()
 
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
@@ -126,6 +129,7 @@ func (m pickerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			i, ok := m.list.SelectedItem().(FoodItem)
 			if ok {
 				m.choice = i.Name
+				return makeLogFoodModel(i)
 			}
 			return m, tea.Quit
 		case "up", "down":
@@ -155,26 +159,26 @@ func (m pickerModel) View() string {
 	} else {
 		help_text += "\nctrl+n: create new item"
 	}
-	help := helpStyle.Render(help_text)
-	return fmt.Sprintf("Food:\n\n%s\n\n%s\n\n%s", m.list.View(), m.input.View(), help)
+	help := HelpStyle.Render(help_text)
+	return ViewStyle.Render(fmt.Sprintf("Food:\n\n%s\n\n%s\n\n%s", m.list.View(), m.input.View(), help))
 }
 
-var (
-	titleStyle = lipgloss.NewStyle().
-			Bold(true).
-			Foreground(lipgloss.Color("205")).
-			MarginLeft(2)
-
-	itemStyle = lipgloss.NewStyle().
-			PaddingLeft(4)
-
-	selectedItemStyle = lipgloss.NewStyle().
-				PaddingLeft(2).
-				Foreground(lipgloss.Color("170"))
-
-	paginationStyle = lipgloss.NewStyle().
-			PaddingLeft(4)
-
-	helpStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("240"))
-)
+// var (
+// 	titleStyle = lipgloss.NewStyle().
+// 			Bold(true).
+// 			Foreground(lipgloss.Color("205")).
+// 			MarginLeft(2)
+//
+// 	itemStyle = lipgloss.NewStyle().
+// 			PaddingLeft(4)
+//
+// 	selectedItemStyle = lipgloss.NewStyle().
+// 				PaddingLeft(2).
+// 				Foreground(lipgloss.Color("170"))
+//
+// 	paginationStyle = lipgloss.NewStyle().
+// 			PaddingLeft(4)
+//
+// 	helpStyle = lipgloss.NewStyle().
+// 			Foreground(lipgloss.Color("240"))
+// )
