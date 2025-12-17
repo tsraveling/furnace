@@ -109,7 +109,7 @@ func (m *pickerModel) canCreate() bool {
 func (m pickerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		cfg.ww = msg.Width
+		cfg.updateWW(msg.Width)
 		m.list.SetWidth(cfg.fullWidth())
 		m.input.Width = cfg.fullWidth()
 

@@ -1,6 +1,10 @@
 package main
 
 import (
+	"errors"
+	"fmt"
+	"strconv"
+
 	"github.com/charmbracelet/bubbles/textinput"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -8,8 +12,10 @@ import (
 )
 
 type logFoodModel struct {
-	input       textinput.Model
-	loggingItem FoodItem
+	input        textinput.Model
+	loggingItem  FoodItem
+	numericValue float64
+	err          error
 }
 
 func makeLogFoodModel(i FoodItem) (logFoodModel, tea.Cmd) {
@@ -31,7 +37,7 @@ func (m logFoodModel) Init() tea.Cmd {
 func (m logFoodModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		cfg.ww = msg.Width
+		cfg.updateWW(msg.Width)
 		m.input.Width = cfg.fullWidth()
 
 	case tea.KeyMsg:
@@ -43,12 +49,30 @@ func (m logFoodModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	var cmd tea.Cmd
 	m.input, cmd = m.input.Update(msg)
+
+	// Get the values
+	if val, err := strconv.ParseFloat(m.input.Value(), 64); err == nil {
+		m.err = nil
+		m.numericValue = val
+	} else {
+		m.err = errors.New("please enter a valid number")
+	}
+
 	return m, cmd
 }
 
 func (m logFoodModel) View() string {
 	title := TitleStyle.Render("Logging " + m.loggingItem.Name + ":")
-	body := title + "\n\n" + m.input.View()
+	var helper string
+	if len(m.input.Value()) == 0 {
+		helper = HelpStyle.Render("Enter a value to see the caloric value.")
+	} else if m.err != nil {
+		helper = ErrorStyle.Render("Please enter a valid number!")
+	} else {
+		calc := fmt.Sprintf("in %s: %d calories", m.loggingItem.Units, int(float64(m.loggingItem.Calories)*m.numericValue))
+		helper = ActiveStyle.Render(calc)
+	}
+	body := title + "\n\n" + m.input.View() + "\n\n" + helper
 	return ViewStyle.Render(body)
 }
 

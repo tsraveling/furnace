@@ -6,7 +6,9 @@ var (
 	// Colors
 	ColorPrimary   = lipgloss.Color("205")
 	ColorSecondary = lipgloss.Color("170")
+	ColorError     = lipgloss.Color("124")
 	ColorMuted     = lipgloss.Color("240")
+	ColorActive    = lipgloss.Color("76")
 
 	// Styles
 
@@ -26,6 +28,10 @@ var (
 
 	ItemStyle = lipgloss.NewStyle().
 			PaddingLeft(4)
+
+	ErrorStyle = lipgloss.NewStyle().Foreground(ColorError)
+
+	ActiveStyle = lipgloss.NewStyle().Foreground(ColorActive)
 
 	SelectedItemStyle = lipgloss.NewStyle().
 				PaddingLeft(2).

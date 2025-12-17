@@ -25,6 +25,11 @@ func (c *config) fullWidth() int {
 	return c.ww - 8
 }
 
+// TODO: Make these configurable
+func (c *config) updateWW(ww int) {
+	c.ww = max(30, min(ww, 80))
+}
+
 var cfg config
 
 func expandPath(path string) string {
