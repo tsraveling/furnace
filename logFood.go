@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/charmbracelet/bubbles/textinput"
 
@@ -42,8 +43,18 @@ func (m logFoodModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
-		case "esc", "ctrl+c":
+		case "ctrl+c":
 			return m, tea.Quit
+		case "enter":
+			if m.err == nil && m.numericValue > 0 {
+				// TODO: Add support for other dates to be passed in
+				m.err = writeLog(m.loggingItem.Name, m.numericValue, time.Now())
+			} else if m.numericValue <= 0 {
+				m.err = errors.New("Please enter a quantity!")
+			}
+			if m.err == nil {
+				return makeSummaryViewModel()
+			}
 		}
 	}
 
@@ -55,7 +66,7 @@ func (m logFoodModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.err = nil
 		m.numericValue = val
 	} else {
-		m.err = errors.New("please enter a valid number")
+		m.err = errors.New("Please enter a valid number!")
 	}
 
 	return m, cmd
@@ -67,7 +78,7 @@ func (m logFoodModel) View() string {
 	if len(m.input.Value()) == 0 {
 		helper = HelpStyle.Render("Enter a value to see the caloric value.")
 	} else if m.err != nil {
-		helper = ErrorStyle.Render("Please enter a valid number!")
+		helper = ErrorStyle.Render(m.err.Error())
 	} else {
 		calc := fmt.Sprintf("in %s: %d calories", m.loggingItem.Units, int(float64(m.loggingItem.Calories)*m.numericValue))
 		helper = ActiveStyle.Render(calc)
@@ -75,13 +86,3 @@ func (m logFoodModel) View() string {
 	body := title + "\n\n" + m.input.View() + "\n\n" + helper
 	return ViewStyle.Render(body)
 }
-
-// var (
-// 	titleStyle = lipgloss.NewStyle().
-// 			Bold(true).
-// 			Foreground(lipgloss.Color("205")).
-// 			MarginLeft(2)
-//
-// 	itemStyle = lipgloss.NewStyle().
-// 			PaddingLeft(4)
-// )
