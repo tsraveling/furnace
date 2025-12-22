@@ -48,7 +48,7 @@ type pickerModel struct {
 	ww            int
 }
 
-func foodPicker() (pickerModel, tea.Cmd) {
+func makeFoodPicker() (pickerModel, tea.Cmd) {
 	const defaultWidth = 20
 
 	items := cfg.foodDB.All()

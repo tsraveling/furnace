@@ -85,15 +85,3 @@ func writeLog(itemName string, quantity float64, date time.Time) error {
 	_, err = f.WriteString(line)
 	return err
 }
-
-func logsForDate(logs []log, day time.Time) []log {
-	y, m, d := day.Date()
-	var filtered []log
-	for _, l := range logs {
-		ly, lm, ld := l.date.Date()
-		if ly == y && lm == m && ld == d {
-			filtered = append(filtered, l)
-		}
-	}
-	return filtered
-}

@@ -9,7 +9,7 @@ func main() {
 
 	cfg = readConfig()
 
-	m, _ := foodPicker()
+	m, _ := makeSummaryViewModel()
 	p := tea.NewProgram(m)
 	p.Run()
 }
