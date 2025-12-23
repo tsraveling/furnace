@@ -6,6 +6,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 type zoomLevel int
@@ -22,6 +23,7 @@ type summaryViewModel struct {
 	zoom    zoomLevel
 	viewing time.Time
 	logs    []log
+	total   int
 }
 
 func getColumns() []table.Column {
@@ -38,15 +40,14 @@ func getColumns() []table.Column {
 
 func makeSummaryViewModel() (summaryViewModel, tea.Cmd) {
 	logs := loadLogs()
-	rows := rowsForLogs(logs)
 	t := table.New(
 		table.WithColumns(getColumns()),
-		table.WithRows(rows),
 		table.WithFocused(true),
 		table.WithHeight(7),
 		table.WithWidth(cfg.fullWidth()),
 	)
 	m := summaryViewModel{logs: logs, viewing: time.Now(), zoom: zoomDay, table: t}
+	m.refreshRows()
 	return m, m.Init()
 }
 
@@ -70,6 +71,22 @@ func rowsForLogs(l []log) []table.Row {
 	return ret
 }
 
+func (m *summaryViewModel) refreshRows() {
+	l := m.logsForView()
+	r := rowsForLogs(l)
+	m.total = 0
+	for _, log := range l {
+		m.total += log.calories
+	}
+	m.table.SetRows(r)
+}
+
+func sameDay(t1, t2 time.Time) bool {
+	y1, m1, d1 := t1.Date()
+	y2, m2, d2 := t2.Date()
+	return y1 == y2 && m1 == m2 && d1 == d2
+}
+
 func (m summaryViewModel) Init() tea.Cmd {
 	return nil
 }
@@ -84,19 +101,41 @@ func (m summaryViewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch keypress := msg.String(); keypress {
 		case "esc", "ctrl+c":
 			return m, tea.Quit
+		case "a":
+			return makeFoodPicker(m.viewing)
+		case "left", "h":
+			m.viewing = m.viewing.Add(-24 * time.Hour)
+			m.refreshRows()
+		case "right", "l":
+			m.viewing = m.viewing.Add(24 * time.Hour)
+			m.refreshRows()
 		}
 	}
 
 	// Text input gets the end of it
-	// var cmd tea.Cmd
-	// m.input, cmd = m.input.Update(msg)
-	// return m, cmd
-
-	return m, nil
+	var cmd tea.Cmd
+	m.table, cmd = m.table.Update(msg)
+	return m, cmd
 }
 
 func (m summaryViewModel) View() string {
-	// l := m.logsForView()
+	now := time.Now()
+	var title_text string
+	switch m.zoom {
+	case zoomDay:
+		dfmt := "Monday, Jan 2"
+		if sameDay(now, m.viewing) {
+			dfmt = "Monday, Jan 2 (Today)"
+		} else if m.viewing.Year() != now.Year() {
+			dfmt = "Monday, Jan 2, 2006"
+		}
+		title_text = m.viewing.Format(dfmt)
+	}
+	title := TitleStyle.AlignHorizontal(lipgloss.Center).Width(cfg.fullWidth()).Render(title_text)
 	table := m.table.View()
-	return ViewStyle.Render(table)
+	rightStyle := lipgloss.NewStyle().AlignHorizontal(lipgloss.Right).Width(cfg.fullWidth()).PaddingRight(2)
+	total := TitleStyle.Render(fmt.Sprintf("%d calories", m.total))
+	totalLine := rightStyle.Render(fmt.Sprintf("Total: %s", total))
+	body := fmt.Sprintf("%s\n\n%s\n%s", title, table, totalLine)
+	return ViewStyle.Render(body)
 }

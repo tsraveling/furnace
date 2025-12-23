@@ -23,8 +23,7 @@ var (
 
 	TitleStyle = lipgloss.NewStyle().
 			Bold(true).
-			Foreground(ColorPrimary).
-			MarginLeft(2)
+			Foreground(ColorPrimary)
 
 	ItemStyle = lipgloss.NewStyle().
 			PaddingLeft(4)

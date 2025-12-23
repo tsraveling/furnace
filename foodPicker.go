@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/textinput"
@@ -42,13 +43,18 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 type pickerModel struct {
 	list          list.Model
 	input         textinput.Model
+	forDate       time.Time
 	allItems      []list.Item
 	hasExactMatch bool
 	choice        string
 	ww            int
 }
 
-func makeFoodPicker() (pickerModel, tea.Cmd) {
+func (m *pickerModel) updateTitle() {
+	m.list.Title = "Log an item for " + m.forDate.Format("Mon 01.03.06")
+}
+
+func makeFoodPicker(t time.Time) (pickerModel, tea.Cmd) {
 	const defaultWidth = 20
 
 	items := cfg.foodDB.All()
@@ -60,7 +66,6 @@ func makeFoodPicker() (pickerModel, tea.Cmd) {
 	lh := min(len(items)+4, listHeight)
 
 	l := list.New(allItems, itemDelegate{}, defaultWidth, lh)
-	l.Title = "Item to log?"
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(false)
 	l.Styles.Title = TitleStyle
@@ -74,7 +79,8 @@ func makeFoodPicker() (pickerModel, tea.Cmd) {
 	ti.CharLimit = 128
 	ti.Width = cfg.fullWidth()
 
-	m := pickerModel{list: l, allItems: allItems, input: ti}
+	m := pickerModel{list: l, allItems: allItems, input: ti, forDate: t}
+	m.updateTitle()
 	return m, m.Init()
 }
 
@@ -123,7 +129,7 @@ func (m pickerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				break
 			}
 			// -> Make Item flow
-			return makeCreateItemModel(m.input.Value())
+			return makeCreateItemModel(m.input.Value(), m)
 
 		case "enter":
 			i, ok := m.list.SelectedItem().(FoodItem)
@@ -160,7 +166,7 @@ func (m pickerModel) View() string {
 		help_text += "\nctrl+n: create new item"
 	}
 	help := HelpStyle.Render(help_text)
-	return ViewStyle.Render(fmt.Sprintf("Food:\n\n%s\n\n%s\n\n%s", m.list.View(), m.input.View(), help))
+	return ViewStyle.Render(fmt.Sprintf("%s\n\n%s\n\n%s", m.list.View(), m.input.View(), help))
 }
 
 // var (
