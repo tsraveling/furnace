@@ -76,10 +76,3 @@ func readConfig() config {
 
 	return ret
 }
-
-func (c *config) saveNewFood(i FoodItem) {
-	err := c.foodDB.Add(filepath.Join(c.homeFolder, "food.md"), i)
-	if err != nil {
-		panic(err)
-	}
-}

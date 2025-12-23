@@ -21,11 +21,12 @@ const (
 )
 
 type summaryViewModel struct {
-	table   table.Model
-	zoom    zoomLevel
-	viewing time.Time
-	logs    []log
-	total   int
+	table    table.Model
+	zoom     zoomLevel
+	viewing  time.Time
+	viewLogs []log
+	logs     []log
+	total    int
 }
 
 func getColumns() []table.Column {
@@ -38,6 +39,10 @@ func getColumns() []table.Column {
 		{Title: "Quantity", Width: quan_w},
 		{Title: "Calories", Width: cal_w},
 	}
+}
+
+func (m *summaryViewModel) reloadLogs() {
+	m.logs = loadLogs()
 }
 
 func makeSummaryViewModel(d time.Time) (summaryViewModel, tea.Cmd) {
@@ -74,14 +79,25 @@ func rowsForLogs(l []log) []table.Row {
 }
 
 func (m *summaryViewModel) refreshRows() {
-	l := m.logsForView()
-	r := rowsForLogs(l)
+	m.viewLogs = m.logsForView()
+	r := rowsForLogs(m.viewLogs)
 	m.total = 0
-	for _, log := range l {
+	for _, log := range m.viewLogs {
 		m.total += log.calories
 	}
-	m.table.SetHeight(max(min(len(l)+1, 12), 6))
+	m.table.SetHeight(max(min(len(m.viewLogs)+1, 12), 6))
 	m.table.SetRows(r)
+}
+
+func (m *summaryViewModel) deleteRow(i int) {
+	path := cfg.getPath("logs.md")
+	err := deleteLine(path, m.viewLogs[i].line)
+	if err != nil {
+		panic(err)
+	}
+	m.reloadLogs()
+	m.refreshRows()
+	m.table.SetCursor(max(0, m.table.Cursor()-1))
 }
 
 func sameDay(t1, t2 time.Time) bool {
@@ -106,11 +122,15 @@ func (m summaryViewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		case "a":
 			return makeFoodPicker(m.viewing)
+		case "d":
+			m.deleteRow(m.table.Cursor())
 		case "left", "h":
 			m.viewing = m.viewing.Add(-24 * time.Hour)
+			m.table.SetCursor(1)
 			m.refreshRows()
 		case "right", "l":
 			m.viewing = m.viewing.Add(24 * time.Hour)
+			m.table.SetCursor(1)
 			m.refreshRows()
 		}
 	}
@@ -139,9 +159,10 @@ func (m summaryViewModel) View() string {
 	total := ActiveStyle.PaddingRight(2).Render(fmt.Sprintf("%d calories", m.total))
 	count := HelpStyle.Render(fmt.Sprintf("%d/%d", m.table.Cursor()+1, len(m.table.Rows())))
 	totalLabel := fmt.Sprintf("Total: %s", total)
-	spacer := strings.Repeat(" ", cfg.fullWidth()-(lipgloss.Width(totalLabel)+lipgloss.Width(count)))
+	spacer_width := max(cfg.fullWidth()-(lipgloss.Width(totalLabel)+lipgloss.Width(count)), 1)
+	spacer := strings.Repeat(" ", spacer_width)
 	totalLine := lipgloss.JoinHorizontal(lipgloss.Top, count, spacer, totalLabel)
-	help := "↑↓jk navigate  ←→hl change day  a add  e edit  E edit food  f fill mode"
+	help := "↑↓jk navigate  ←→hl change day  a add  e edit  d delete  E edit food  f fill mode"
 	wrappedHelp := wordwrap.String(help, cfg.fullWidth())
 	styledHelp := HelpStyle.Render(wrappedHelp)
 	body := fmt.Sprintf("%s\n\n%s\n\n%s\n%s", title, table, totalLine, styledHelp)

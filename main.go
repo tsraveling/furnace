@@ -12,7 +12,7 @@ func main() {
 	cfg = readConfig()
 
 	// FIXME: Delete this debug value
-	dbgWhich := 1
+	dbgWhich := 0
 
 	var m tea.Model
 	switch dbgWhich {

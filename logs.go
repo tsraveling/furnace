@@ -14,6 +14,7 @@ type log struct {
 	item     *FoodItem
 	quantity float64
 	calories int
+	line     int
 }
 
 func loadLogs() []log {
@@ -26,8 +27,10 @@ func loadLogs() []log {
 
 	var logs []log
 
+	lineNum := 0
 	for line := range strings.SplitSeq(string(data), "\n") {
 		line = strings.TrimSpace(line)
+		lineNum++
 
 		if line == "" || strings.HasPrefix(line, "#") {
 			continue
@@ -61,6 +64,7 @@ func loadLogs() []log {
 			item:     item,
 			quantity: quantity,
 			calories: calories,
+			line:     lineNum,
 		})
 	}
 

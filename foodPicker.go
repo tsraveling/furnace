@@ -64,7 +64,7 @@ func makeFoodPicker(t time.Time) (pickerModel, tea.Cmd) {
 		allItems[i] = item
 	}
 
-	lh := min(len(items), listHeight)
+	lh := min(len(items)+3, listHeight)
 
 	l := list.New(allItems, itemDelegate{}, defaultWidth, lh)
 	l.SetShowStatusBar(false)

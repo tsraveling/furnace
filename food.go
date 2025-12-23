@@ -11,24 +11,27 @@ type FoodItem struct {
 	Name     string
 	Units    string
 	Calories int
+	line     int
 }
 
 type FoodDB struct {
-	items  []FoodItem
-	byName map[string]*FoodItem
+	filePath string
+	items    []FoodItem
+	byName   map[string]*FoodItem
 }
 
-func LoadFoodDB(path string) (*FoodDB, error) {
-	data, err := os.ReadFile(path)
+func (db *FoodDB) reload() error {
+	data, err := os.ReadFile(db.filePath)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	db := &FoodDB{
-		byName: make(map[string]*FoodItem),
-	}
+	clear(db.byName)
+	clear(db.items)
 
+	lineNum := 0
 	for line := range strings.SplitSeq(string(data), "\n") {
+		lineNum++
 		line = strings.TrimSpace(line)
 
 		// Skip empty lines and comments
@@ -52,10 +55,23 @@ func LoadFoodDB(path string) (*FoodDB, error) {
 			Name:     strings.TrimSpace(parts[0]),
 			Units:    strings.TrimSpace(parts[1]),
 			Calories: cal,
+			line:     lineNum,
 		}
 		db.items = append(db.items, item)
 		db.byName[item.Name] = &db.items[len(db.items)-1]
 	}
+	return nil
+}
+
+func LoadFoodDB(path string) (*FoodDB, error) {
+
+	db := &FoodDB{
+		byName:   make(map[string]*FoodItem),
+		filePath: path,
+	}
+
+	// Load from file
+	db.reload()
 
 	return db, nil
 }
@@ -68,9 +84,19 @@ func (db *FoodDB) All() []FoodItem {
 	return db.items
 }
 
-func (db *FoodDB) Add(path string, i FoodItem) error {
+func (db *FoodDB) Delete(i FoodItem) error {
+	err := deleteLine(db.filePath, i.line)
+	if err != nil {
+		return err
+	}
+	db.reload()
+	return nil
+}
+
+func (db *FoodDB) Add(i FoodItem) error {
+
 	// Append to file
-	f, err := os.OpenFile(path, os.O_APPEND|os.O_WRONLY, 0644)
+	f, err := os.OpenFile(db.filePath, os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
 	}
@@ -81,9 +107,7 @@ func (db *FoodDB) Add(path string, i FoodItem) error {
 		return err
 	}
 
-	// Add to in-memory db
-	db.items = append(db.items, i)
-	db.byName[i.Name] = &db.items[len(db.items)-1]
-
+	// Reload
+	db.reload()
 	return nil
 }

@@ -128,6 +128,8 @@ func (m createItemModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "enter":
 			if m.focused < 2 {
 				m.nextInput()
+				m.refreshFocus()
+				return m, nil
 			} else {
 				if m.checkValid() {
 					// If the new item is valid, save it and go to quantity entry
@@ -136,7 +138,7 @@ func (m createItemModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						panic(err) // just in case validation misses it somehow
 					}
 					fi := FoodItem{Name: m.nameInput.Value(), Units: m.unitsInput.Value(), Calories: int(cals)}
-					cfg.saveNewFood(fi)
+					cfg.foodDB.Add(fi)
 					return makeLogFoodModel(fi, m.backState.forDate)
 				}
 			}
