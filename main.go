@@ -1,27 +1,34 @@
 package main
 
 import (
+	"fmt"
+	"os"
+	"strings"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 func main() {
-	// STUB: args can be processed in here
 
+	// Load the config file
 	cfg = readConfig()
 
-	// FIXME: Delete this debug value
-	dbgWhich := 0
-
 	var m tea.Model
-	switch dbgWhich {
-
-	case 0: // STUB: from arg ``
+	if len(os.Args) < 2 {
 		m, _ = makeSummaryViewModel(time.Now())
-	case 1: // STUB: from arg `log`
-		m, _ = makeFoodPicker(time.Now())
+	} else {
+		switch os.Args[1] {
+		case "log":
+			// `furn log`
+			input := strings.Join(os.Args[2:], " ")
+			m, _ = makeFoodPicker(time.Now(), input)
+		default:
+			fmt.Fprintf(os.Stderr, "unknown command: %s\n", os.Args[1])
+			os.Exit(1)
+		}
 	}
+
 	p := tea.NewProgram(m)
 	p.Run()
 }

@@ -55,7 +55,7 @@ func (m *pickerModel) updateTitle() {
 	m.list.Title = "Log an item for " + m.forDate.Format("Mon Jan 2 '06")
 }
 
-func makeFoodPicker(t time.Time) (pickerModel, tea.Cmd) {
+func makeFoodPicker(t time.Time, ii string) (pickerModel, tea.Cmd) {
 	const defaultWidth = 20
 
 	items := cfg.foodDB.All()
@@ -79,6 +79,7 @@ func makeFoodPicker(t time.Time) (pickerModel, tea.Cmd) {
 	ti.Focus()
 	ti.CharLimit = 128
 	ti.Width = cfg.fullWidth()
+	ti.SetValue(ii)
 
 	m := pickerModel{list: l, allItems: allItems, input: ti, forDate: t}
 	m.updateTitle()

@@ -121,7 +121,7 @@ func (m summaryViewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "esc", "ctrl+c":
 			return m, tea.Quit
 		case "a":
-			return makeFoodPicker(m.viewing)
+			return makeFoodPicker(m.viewing, "")
 		case "d":
 			m.deleteRow(m.table.Cursor())
 		case "left", "h":
@@ -162,7 +162,8 @@ func (m summaryViewModel) View() string {
 	spacer_width := max(cfg.fullWidth()-(lipgloss.Width(totalLabel)+lipgloss.Width(count)), 1)
 	spacer := strings.Repeat(" ", spacer_width)
 	totalLine := lipgloss.JoinHorizontal(lipgloss.Top, count, spacer, totalLabel)
-	help := "↑↓jk navigate  ←→hl change day  a add  e edit  d delete  E edit food  f fill mode"
+	//help := "↑↓jk navigate  ←→hl change day  a add  e edit  d delete  E edit food  f fill mode"
+	help := "↑↓jk navigate  ←→hl change day  a add  d delete"
 	wrappedHelp := wordwrap.String(help, cfg.fullWidth())
 	styledHelp := HelpStyle.Render(wrappedHelp)
 	body := fmt.Sprintf("%s\n\n%s\n\n%s\n%s", title, table, totalLine, styledHelp)
