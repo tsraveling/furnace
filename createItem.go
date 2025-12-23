@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -14,6 +15,7 @@ type createItemModel struct {
 	nameInput  textinput.Model
 	unitsInput textinput.Model
 	calInput   textinput.Model
+	err        error
 }
 
 // nextInput focuses the next input field
@@ -28,6 +30,38 @@ func (m *createItemModel) prevInput() {
 	if m.focused < 0 {
 		m.focused = 2
 	}
+}
+
+func intValidator(s string) error {
+	_, err := strconv.ParseInt(s, 10, 64)
+	return err
+}
+
+func (m *createItemModel) checkValid() bool {
+	nm := m.nameInput.Value()
+	if len(nm) < 1 {
+		m.err = fmt.Errorf("Enter a name")
+		return false
+	}
+
+	_, ok := cfg.foodDB.byName[nm]
+	if ok {
+		m.err = fmt.Errorf("\"%s\" already exists in the database!", nm)
+		return false
+	}
+
+	if len(m.unitsInput.Value()) < 1 {
+		m.err = fmt.Errorf("Enter a the units for this item")
+		return false
+	}
+
+	calErr := intValidator(m.calInput.Value())
+	if calErr != nil {
+		m.err = fmt.Errorf("Calories must be a whole number")
+		return false
+	}
+
+	return true
 }
 
 func makeCreateItemModel(nn string, back pickerModel) (createItemModel, tea.Cmd) {
@@ -48,6 +82,7 @@ func makeCreateItemModel(nn string, back pickerModel) (createItemModel, tea.Cmd)
 	c.Placeholder = "e.g. 150"
 	c.Width = min(30, cfg.fullWidth())
 	c.Prompt = "> "
+	c.Validate = intValidator
 
 	m := createItemModel{focused: 0, backState: back, nameInput: n, unitsInput: u, calInput: c}
 	return m, m.Init()
@@ -94,9 +129,22 @@ func (m createItemModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.focused < 2 {
 				m.nextInput()
 			} else {
-				// SUBMIT
+				if m.checkValid() {
+					// If the new item is valid, save it and go to quantity entry
+					cals, err := strconv.ParseInt(m.calInput.Value(), 10, 64)
+					if err != nil {
+						panic(err) // just in case validation misses it somehow
+					}
+					fi := FoodItem{Name: m.nameInput.Value(), Units: m.unitsInput.Value(), Calories: int(cals)}
+					cfg.saveNewFood(fi)
+					return makeLogFoodModel(fi, m.backState.forDate)
+				}
 			}
 		}
+
+	case error:
+		m.err = msg
+		return m, nil
 	}
 
 	// Process text inputs
@@ -112,6 +160,10 @@ func (m createItemModel) View() string {
 	ni := ActiveStyle.Render(m.nameInput.View())
 	ui := ActiveStyle.Render(m.unitsInput.View())
 	ci := ActiveStyle.Render(m.calInput.View())
-	body := fmt.Sprintf("%s\n\nName:\n%s\n\nUnits:\n%s\n\nCalories:\n%s", title, ni, ui, ci)
+	errMsg := ""
+	if m.err != nil {
+		errMsg = ErrorStyle.Render(m.err.Error())
+	}
+	body := fmt.Sprintf("%s\n\nName:\n%s\n\nUnits:\n%s\n\nCalories:\n%s\n\n%s", title, ni, ui, ci, errMsg)
 	return ViewStyle.Render(body)
 }

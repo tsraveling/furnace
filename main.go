@@ -18,7 +18,7 @@ func main() {
 	switch dbgWhich {
 
 	case 0: // STUB: from arg ``
-		m, _ = makeSummaryViewModel()
+		m, _ = makeSummaryViewModel(time.Now())
 	case 1: // STUB: from arg `log`
 		m, _ = makeFoodPicker(time.Now())
 	}

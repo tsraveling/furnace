@@ -13,13 +13,14 @@ import (
 )
 
 type logFoodModel struct {
+	forDate      time.Time
 	input        textinput.Model
 	loggingItem  FoodItem
 	numericValue float64
 	err          error
 }
 
-func makeLogFoodModel(i FoodItem) (logFoodModel, tea.Cmd) {
+func makeLogFoodModel(i FoodItem, d time.Time) (logFoodModel, tea.Cmd) {
 
 	ti := textinput.New()
 	ti.Placeholder = "# of " + i.Units
@@ -27,7 +28,7 @@ func makeLogFoodModel(i FoodItem) (logFoodModel, tea.Cmd) {
 	ti.CharLimit = 16
 	ti.Width = cfg.fullWidth()
 
-	m := logFoodModel{input: ti, loggingItem: i}
+	m := logFoodModel{input: ti, loggingItem: i, forDate: d}
 	return m, m.Init()
 }
 
@@ -47,13 +48,12 @@ func (m logFoodModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		case "enter":
 			if m.err == nil && m.numericValue > 0 {
-				// TODO: Add support for other dates to be passed in
-				m.err = writeLog(m.loggingItem.Name, m.numericValue, time.Now())
+				m.err = writeLog(m.loggingItem.Name, m.numericValue, m.forDate)
 			} else if m.numericValue <= 0 {
 				m.err = errors.New("Please enter a quantity!")
 			}
 			if m.err == nil {
-				return makeSummaryViewModel()
+				return makeSummaryViewModel(m.forDate)
 			}
 		}
 	}

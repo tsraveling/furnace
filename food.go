@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -65,4 +66,24 @@ func (db *FoodDB) Get(name string) *FoodItem {
 
 func (db *FoodDB) All() []FoodItem {
 	return db.items
+}
+
+func (db *FoodDB) Add(path string, i FoodItem) error {
+	// Append to file
+	f, err := os.OpenFile(path, os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	line := fmt.Sprintf("%s | %s | %d\n", i.Name, i.Units, i.Calories)
+	if _, err := f.WriteString(line); err != nil {
+		return err
+	}
+
+	// Add to in-memory db
+	db.items = append(db.items, i)
+	db.byName[i.Name] = &db.items[len(db.items)-1]
+
+	return nil
 }

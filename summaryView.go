@@ -38,7 +38,7 @@ func getColumns() []table.Column {
 	}
 }
 
-func makeSummaryViewModel() (summaryViewModel, tea.Cmd) {
+func makeSummaryViewModel(d time.Time) (summaryViewModel, tea.Cmd) {
 	logs := loadLogs()
 	t := table.New(
 		table.WithColumns(getColumns()),
@@ -46,7 +46,7 @@ func makeSummaryViewModel() (summaryViewModel, tea.Cmd) {
 		table.WithHeight(7),
 		table.WithWidth(cfg.fullWidth()),
 	)
-	m := summaryViewModel{logs: logs, viewing: time.Now(), zoom: zoomDay, table: t}
+	m := summaryViewModel{logs: logs, viewing: d, zoom: zoomDay, table: t}
 	m.refreshRows()
 	return m, m.Init()
 }
@@ -78,6 +78,7 @@ func (m *summaryViewModel) refreshRows() {
 	for _, log := range l {
 		m.total += log.calories
 	}
+	m.table.SetHeight(max(min(len(l)+1, 12), 6))
 	m.table.SetRows(r)
 }
 
