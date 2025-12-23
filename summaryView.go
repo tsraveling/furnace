@@ -2,11 +2,13 @@ package main
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/muesli/reflow/wordwrap"
 )
 
 type zoomLevel int
@@ -134,9 +136,14 @@ func (m summaryViewModel) View() string {
 	}
 	title := TitleStyle.AlignHorizontal(lipgloss.Center).Width(cfg.fullWidth()).Render(title_text)
 	table := m.table.View()
-	rightStyle := lipgloss.NewStyle().AlignHorizontal(lipgloss.Right).Width(cfg.fullWidth()).PaddingRight(2)
-	total := TitleStyle.Render(fmt.Sprintf("%d calories", m.total))
-	totalLine := rightStyle.Render(fmt.Sprintf("Total: %s", total))
-	body := fmt.Sprintf("%s\n\n%s\n%s", title, table, totalLine)
+	total := ActiveStyle.PaddingRight(2).Render(fmt.Sprintf("%d calories", m.total))
+	count := HelpStyle.Render(fmt.Sprintf("%d/%d", m.table.Cursor()+1, len(m.table.Rows())))
+	totalLabel := fmt.Sprintf("Total: %s", total)
+	spacer := strings.Repeat(" ", cfg.fullWidth()-(lipgloss.Width(totalLabel)+lipgloss.Width(count)))
+	totalLine := lipgloss.JoinHorizontal(lipgloss.Top, count, spacer, totalLabel)
+	help := "↑↓jk navigate  ←→hl change day  a add  e edit  E edit food  f fill mode"
+	wrappedHelp := wordwrap.String(help, cfg.fullWidth())
+	styledHelp := HelpStyle.Render(wrappedHelp)
+	body := fmt.Sprintf("%s\n\n%s\n\n%s\n%s", title, table, totalLine, styledHelp)
 	return ViewStyle.Render(body)
 }
