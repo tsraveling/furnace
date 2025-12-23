@@ -23,18 +23,17 @@ var (
 
 	TitleStyle = lipgloss.NewStyle().
 			Bold(true).
-			Foreground(ColorPrimary).
-			MarginLeft(2)
+			Foreground(ColorPrimary)
 
 	ItemStyle = lipgloss.NewStyle().
-			PaddingLeft(4)
+			PaddingLeft(2)
 
 	ErrorStyle = lipgloss.NewStyle().Foreground(ColorError)
 
 	ActiveStyle = lipgloss.NewStyle().Foreground(ColorActive)
 
 	SelectedItemStyle = lipgloss.NewStyle().
-				PaddingLeft(2).
+				PaddingLeft(0).
 				Foreground(ColorSecondary)
 
 	PaginationStyle = lipgloss.NewStyle().

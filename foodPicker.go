@@ -4,13 +4,14 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-const listHeight = 14
+const listHeight = 10
 
 // SECTION: List delegate
 func (i FoodItem) FilterValue() string { return i.Name }
@@ -31,7 +32,8 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 	fn := ItemStyle.Render
 	if index == m.Index() {
 		fn = func(s ...string) string {
-			return SelectedItemStyle.Render("> " + strings.Join(s, " "))
+			it := fmt.Sprintf("● %s", strings.Join(s, " "))
+			return SelectedItemStyle.Render(it)
 		}
 	}
 
@@ -42,13 +44,18 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 type pickerModel struct {
 	list          list.Model
 	input         textinput.Model
+	forDate       time.Time
 	allItems      []list.Item
 	hasExactMatch bool
 	choice        string
 	ww            int
 }
 
-func foodPicker() (pickerModel, tea.Cmd) {
+func (m *pickerModel) updateTitle() {
+	m.list.Title = "Log an item for " + m.forDate.Format("Mon Jan 2 '06")
+}
+
+func makeFoodPicker(t time.Time, ii string) (pickerModel, tea.Cmd) {
 	const defaultWidth = 20
 
 	items := cfg.foodDB.All()
@@ -57,13 +64,12 @@ func foodPicker() (pickerModel, tea.Cmd) {
 		allItems[i] = item
 	}
 
-	lh := min(len(items)+4, listHeight)
+	lh := min(len(items)+3, listHeight)
 
 	l := list.New(allItems, itemDelegate{}, defaultWidth, lh)
-	l.Title = "Item to log?"
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(false)
-	l.Styles.Title = TitleStyle
+	l.SetShowTitle(false)
 	l.Styles.PaginationStyle = PaginationStyle
 	l.SetShowHelp(false)
 	l.SetWidth(cfg.fullWidth())
@@ -73,8 +79,10 @@ func foodPicker() (pickerModel, tea.Cmd) {
 	ti.Focus()
 	ti.CharLimit = 128
 	ti.Width = cfg.fullWidth()
+	ti.SetValue(ii)
 
-	m := pickerModel{list: l, allItems: allItems, input: ti}
+	m := pickerModel{list: l, allItems: allItems, input: ti, forDate: t}
+	m.updateTitle()
 	return m, m.Init()
 }
 
@@ -123,13 +131,13 @@ func (m pickerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				break
 			}
 			// -> Make Item flow
-			return makeCreateItemModel(m.input.Value())
+			return makeCreateItemModel(m.input.Value(), m)
 
 		case "enter":
 			i, ok := m.list.SelectedItem().(FoodItem)
 			if ok {
 				m.choice = i.Name
-				return makeLogFoodModel(i)
+				return makeLogFoodModel(i, m.forDate)
 			}
 			return m, tea.Quit
 		case "up", "down":
@@ -149,6 +157,7 @@ func (m pickerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m pickerModel) View() string {
+	title := TitleStyle.Render(m.list.Title)
 	help_text := "↑/↓: move • enter: select • esc: quit"
 	if len(m.input.Value()) > 0 {
 		if m.hasExactMatch {
@@ -160,25 +169,5 @@ func (m pickerModel) View() string {
 		help_text += "\nctrl+n: create new item"
 	}
 	help := HelpStyle.Render(help_text)
-	return ViewStyle.Render(fmt.Sprintf("Food:\n\n%s\n\n%s\n\n%s", m.list.View(), m.input.View(), help))
+	return ViewStyle.Render(fmt.Sprintf("%s\n\n%s\n\n%s\n\n%s", title, m.list.View(), m.input.View(), help))
 }
-
-// var (
-// 	titleStyle = lipgloss.NewStyle().
-// 			Bold(true).
-// 			Foreground(lipgloss.Color("205")).
-// 			MarginLeft(2)
-//
-// 	itemStyle = lipgloss.NewStyle().
-// 			PaddingLeft(4)
-//
-// 	selectedItemStyle = lipgloss.NewStyle().
-// 				PaddingLeft(2).
-// 				Foreground(lipgloss.Color("170"))
-//
-// 	paginationStyle = lipgloss.NewStyle().
-// 			PaddingLeft(4)
-//
-// 	helpStyle = lipgloss.NewStyle().
-// 			Foreground(lipgloss.Color("240"))
-// )
