@@ -27,7 +27,7 @@ func (db *FoodDB) reload() error {
 	}
 
 	clear(db.byName)
-	clear(db.items)
+	db.items = db.items[:0]
 
 	lineNum := 0
 	for line := range strings.SplitSeq(string(data), "\n") {
