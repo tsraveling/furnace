@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.1.1 - 2025-12-27
+#### Bug Fixes
+- fixes blank item bug after create food flow (#9) - (4512afc) - Tim Raveling
+
+- - -
+
 ## 0.1.0 - 2025-12-23
 #### Features
 - first working build (#1) - (270f32a) - Tim Raveling
