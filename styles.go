@@ -8,6 +8,7 @@ var (
 	ColorSecondary = lipgloss.Color("170")
 	ColorError     = lipgloss.Color("124")
 	ColorMuted     = lipgloss.Color("240")
+	ColorBasic     = lipgloss.Color("250")
 	ColorActive    = lipgloss.Color("76")
 
 	// Styles

@@ -21,6 +21,7 @@ const (
 )
 
 type summaryViewModel struct {
+	quitting bool
 	table    table.Model
 	zoom     zoomLevel
 	viewing  time.Time
@@ -119,6 +120,7 @@ func (m summaryViewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case "esc", "ctrl+c":
+			m.quitting = true
 			return m, tea.Quit
 		case "a":
 			return makeFoodPicker(m.viewing, "")
@@ -142,6 +144,9 @@ func (m summaryViewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m summaryViewModel) View() string {
+	if m.quitting {
+		return quitting()
+	}
 	now := time.Now()
 	var title_text string
 	switch m.zoom {

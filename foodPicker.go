@@ -42,6 +42,7 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 
 // SECTION: Core model and view
 type pickerModel struct {
+	quitting      bool
 	list          list.Model
 	input         textinput.Model
 	forDate       time.Time
@@ -124,6 +125,7 @@ func (m pickerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case "esc", "ctrl+c":
+			m.quitting = true
 			return m, tea.Quit
 
 		case "ctrl+n":
@@ -157,6 +159,9 @@ func (m pickerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m pickerModel) View() string {
+	if m.quitting {
+		return quitting()
+	}
 	title := TitleStyle.Render(m.list.Title)
 	help_text := "↑/↓: move • enter: select • esc: quit"
 	if len(m.input.Value()) > 0 {

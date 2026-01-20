@@ -10,6 +10,7 @@ import (
 )
 
 type createItemModel struct {
+	quitting   bool
 	backState  pickerModel
 	focused    int
 	nameInput  textinput.Model
@@ -116,6 +117,7 @@ func (m createItemModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case "ctrl+c":
+			m.quitting = true
 			return m, tea.Quit
 		case "esc":
 			return m.backState, m.backState.Init()
@@ -158,6 +160,9 @@ func (m createItemModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m createItemModel) View() string {
+	if m.quitting {
+		return quitting()
+	}
 	title := TitleStyle.Width(cfg.fullWidth()).Render("Create item:")
 	ni := ActiveStyle.Render(m.nameInput.View())
 	ui := ActiveStyle.Render(m.unitsInput.View())
