@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.2.0 - 2026-01-20
+#### Features
+- adds last five days summary to quitting state (#15) - (5e366d6) - Tim Raveling
+
+- - -
+
 ## 0.1.1 - 2025-12-27
 #### Bug Fixes
 - fixes blank item bug after create food flow (#9) - (4512afc) - Tim Raveling
