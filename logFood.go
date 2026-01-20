@@ -13,6 +13,7 @@ import (
 )
 
 type logFoodModel struct {
+	quitting     bool
 	forDate      time.Time
 	input        textinput.Model
 	loggingItem  FoodItem
@@ -45,6 +46,7 @@ func (m logFoodModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case "ctrl+c":
+			m.quitting = true
 			return m, tea.Quit
 		case "enter":
 			if m.err == nil && m.numericValue > 0 {
@@ -73,6 +75,9 @@ func (m logFoodModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m logFoodModel) View() string {
+	if m.quitting {
+		return quitting()
+	}
 	title := TitleStyle.Render("Logging " + m.loggingItem.Name + ":")
 	var helper string
 	if len(m.input.Value()) == 0 {
