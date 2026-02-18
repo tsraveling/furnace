@@ -15,6 +15,7 @@ type config struct {
 
 	// Loaded at beginning
 	foodDB *FoodDB
+	// recipeDB *RecipeDB
 
 	// Window width
 	ww int
@@ -73,6 +74,8 @@ func readConfig() config {
 		panic(err)
 	}
 	ret.foodDB = db
+
+	// STUB: Load recipe library
 
 	return ret
 }
