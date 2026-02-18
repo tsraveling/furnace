@@ -10,6 +10,7 @@ var (
 	ColorMuted     = lipgloss.Color("240")
 	ColorBasic     = lipgloss.Color("250")
 	ColorActive    = lipgloss.Color("76")
+	ColorRecipe    = lipgloss.Color("214")
 
 	// Styles
 
@@ -36,6 +37,14 @@ var (
 	SelectedItemStyle = lipgloss.NewStyle().
 				PaddingLeft(0).
 				Foreground(ColorSecondary)
+
+	RecipeItemStyle = lipgloss.NewStyle().
+			PaddingLeft(2).
+			Foreground(ColorRecipe)
+
+	SelectedRecipeItemStyle = lipgloss.NewStyle().
+				PaddingLeft(0).
+				Foreground(ColorRecipe)
 
 	PaginationStyle = lipgloss.NewStyle().
 			PaddingLeft(4)

@@ -21,6 +21,17 @@ type Recipe struct {
 	endLine       int
 }
 
+func (r *Recipe) CaloriesPerUnit() int {
+	total := r.OtherCalories
+	for _, p := range r.Parts {
+		food := cfg.foodDB.Get(p.Food)
+		if food != nil {
+			total += int(float64(food.Calories) * p.Quantity)
+		}
+	}
+	return total
+}
+
 type RecipeDB struct {
 	filePath string
 	items    []Recipe
