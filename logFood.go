@@ -9,27 +9,52 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 
 	tea "github.com/charmbracelet/bubbletea"
-	// "github.com/charmbracelet/lipgloss"
+)
+
+type logFoodMode int
+
+const (
+	logFoodModeNormal     logFoodMode = iota // log and go to summary
+	logFoodModeIngredient                    // capture quantity, return to recipe builder
 )
 
 type logFoodModel struct {
 	quitting     bool
 	forDate      time.Time
 	input        textinput.Model
-	loggingItem  FoodItem
+	loggingItem  pickerItem
 	numericValue float64
 	err          error
+	mode         logFoodMode
+	backPicker   pickerModel
 }
 
-func makeLogFoodModel(i FoodItem, d time.Time) (logFoodModel, tea.Cmd) {
+func makeLogFoodModel(pi pickerItem, d time.Time) (logFoodModel, tea.Cmd) {
 
 	ti := textinput.New()
-	ti.Placeholder = "# of " + i.Units
+	ti.Placeholder = "# of " + pi.units
 	ti.Focus()
 	ti.CharLimit = 16
 	ti.Width = cfg.fullWidth()
 
-	m := logFoodModel{input: ti, loggingItem: i, forDate: d}
+	m := logFoodModel{input: ti, loggingItem: pi, forDate: d, mode: logFoodModeNormal}
+	return m, m.Init()
+}
+
+func makeLogFoodModelForIngredient(pi pickerItem, back pickerModel) (logFoodModel, tea.Cmd) {
+
+	ti := textinput.New()
+	ti.Placeholder = "# of " + pi.units
+	ti.Focus()
+	ti.CharLimit = 16
+	ti.Width = cfg.fullWidth()
+
+	m := logFoodModel{
+		input:       ti,
+		loggingItem: pi,
+		mode:        logFoodModeIngredient,
+		backPicker:  back,
+	}
 	return m, m.Init()
 }
 
@@ -48,14 +73,32 @@ func (m logFoodModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c":
 			m.quitting = true
 			return m, tea.Quit
+		case "esc":
+			if m.mode == logFoodModeIngredient && m.backPicker.backRecipe != nil {
+				return *m.backPicker.backRecipe, m.backPicker.backRecipe.Init()
+			}
+			m.quitting = true
+			return m, tea.Quit
 		case "enter":
 			if m.err == nil && m.numericValue > 0 {
-				m.err = writeLog(m.loggingItem.Name, m.numericValue, m.forDate)
+				switch m.mode {
+				case logFoodModeNormal:
+					if m.loggingItem.isRecipe {
+						m.err = writeRecipeLog(m.loggingItem.name, m.numericValue, m.forDate)
+					} else {
+						m.err = writeLog(m.loggingItem.name, m.numericValue, m.forDate)
+					}
+					if m.err == nil {
+						return makeSummaryViewModel(m.forDate)
+					}
+				case logFoodModeIngredient:
+					part := RecipePart{Food: m.loggingItem.name, Quantity: m.numericValue}
+					recipe := m.backPicker.backRecipe
+					recipe.addIngredient(part)
+					return *recipe, recipe.Init()
+				}
 			} else if m.numericValue <= 0 {
 				m.err = errors.New("Please enter a quantity!")
-			}
-			if m.err == nil {
-				return makeSummaryViewModel(m.forDate)
 			}
 		}
 	}
@@ -78,14 +121,14 @@ func (m logFoodModel) View() string {
 	if m.quitting {
 		return quitting()
 	}
-	title := TitleStyle.Render("Logging " + m.loggingItem.Name + ":")
+	title := TitleStyle.Render("Logging " + m.loggingItem.name + ":")
 	var helper string
 	if len(m.input.Value()) == 0 {
 		helper = HelpStyle.Render("Enter a value to see the caloric value.")
 	} else if m.err != nil {
 		helper = ErrorStyle.Render(m.err.Error())
 	} else {
-		calc := fmt.Sprintf("in %s: %d calories", m.loggingItem.Units, int(float64(m.loggingItem.Calories)*m.numericValue))
+		calc := fmt.Sprintf("in %s: %d calories", m.loggingItem.units, int(float64(m.loggingItem.caloriesPerUnit)*m.numericValue))
 		helper = ActiveStyle.Render(calc)
 	}
 	body := title + "\n\n" + m.input.View() + "\n\n" + helper

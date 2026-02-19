@@ -22,7 +22,7 @@ func main() {
 		case "log":
 			// `furn log`
 			input := strings.Join(os.Args[2:], " ")
-			m, _ = makeFoodPicker(time.Now(), input)
+			m, _ = makeFoodPicker(time.Now(), input, pickerModeLog, nil)
 		default:
 			fmt.Fprintf(os.Stderr, "unknown command: %s\n", os.Args[1])
 			os.Exit(1)

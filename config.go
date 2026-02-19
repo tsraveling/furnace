@@ -14,7 +14,8 @@ type config struct {
 	homeFolder string
 
 	// Loaded at beginning
-	foodDB *FoodDB
+	foodDB   *FoodDB
+	recipeDB *RecipeDB
 
 	// Window width
 	ww int
@@ -73,6 +74,13 @@ func readConfig() config {
 		panic(err)
 	}
 	ret.foodDB = db
+
+	// Load recipe library
+	rdb, err := LoadRecipeDB(filepath.Join(ret.homeFolder, "recipes.md"))
+	if err != nil {
+		panic(err)
+	}
+	ret.recipeDB = rdb
 
 	return ret
 }

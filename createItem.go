@@ -6,7 +6,6 @@ import (
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	// "github.com/charmbracelet/lipgloss"
 )
 
 type createItemModel struct {
@@ -134,14 +133,17 @@ func (m createItemModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			} else {
 				if m.checkValid() {
-					// If the new item is valid, save it and go to quantity entry
 					cals, err := strconv.ParseInt(m.calInput.Value(), 10, 64)
 					if err != nil {
-						panic(err) // just in case validation misses it somehow
+						panic(err)
 					}
 					fi := FoodItem{Name: m.nameInput.Value(), Units: m.unitsInput.Value(), Calories: int(cals)}
 					cfg.foodDB.Add(fi)
-					return makeLogFoodModel(fi, m.backState.forDate)
+					pi := pickerItem{name: fi.Name, units: fi.Units, caloriesPerUnit: fi.Calories, isRecipe: false}
+					if m.backState.mode == pickerModeIngredient {
+						return makeLogFoodModelForIngredient(pi, m.backState)
+					}
+					return makeLogFoodModel(pi, m.backState.forDate)
 				}
 			}
 		}

@@ -13,8 +13,25 @@ import (
 
 const listHeight = 10
 
+// SECTION: Picker item and mode
+
+type pickerMode int
+
+const (
+	pickerModeLog        pickerMode = iota // shows foods + recipes, logs to summary
+	pickerModeIngredient                   // shows foods only, returns ingredient to recipe builder
+)
+
+type pickerItem struct {
+	name            string
+	units           string
+	caloriesPerUnit int
+	isRecipe        bool
+}
+
+func (p pickerItem) FilterValue() string { return p.name }
+
 // SECTION: List delegate
-func (i FoodItem) FilterValue() string { return i.Name }
 
 type itemDelegate struct{}
 
@@ -22,22 +39,30 @@ func (d itemDelegate) Height() int                             { return 1 }
 func (d itemDelegate) Spacing() int                            { return 0 }
 func (d itemDelegate) Update(_ tea.Msg, _ *list.Model) tea.Cmd { return nil }
 func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
-	i, ok := listItem.(FoodItem)
+	i, ok := listItem.(pickerItem)
 	if !ok {
 		return
 	}
 
-	str := fmt.Sprintf("%s", i.Name)
-
-	fn := ItemStyle.Render
-	if index == m.Index() {
-		fn = func(s ...string) string {
-			it := fmt.Sprintf("● %s", strings.Join(s, " "))
-			return SelectedItemStyle.Render(it)
-		}
+	str := i.name
+	if i.isRecipe {
+		str = "◈ " + str
 	}
 
-	fmt.Fprint(w, fn(str))
+	if index == m.Index() {
+		prefix := fmt.Sprintf("● %s", str)
+		if i.isRecipe {
+			fmt.Fprint(w, SelectedRecipeItemStyle.Render(prefix))
+		} else {
+			fmt.Fprint(w, SelectedItemStyle.Render(prefix))
+		}
+	} else {
+		if i.isRecipe {
+			fmt.Fprint(w, RecipeItemStyle.Render(str))
+		} else {
+			fmt.Fprint(w, ItemStyle.Render(str))
+		}
+	}
 }
 
 // SECTION: Core model and view
@@ -50,22 +75,44 @@ type pickerModel struct {
 	hasExactMatch bool
 	choice        string
 	ww            int
+	mode          pickerMode
+	backRecipe    *createRecipeModel
 }
 
 func (m *pickerModel) updateTitle() {
-	m.list.Title = "Log an item for " + m.forDate.Format("Mon Jan 2 '06")
+	if m.mode == pickerModeIngredient {
+		m.list.Title = "Select an ingredient"
+	} else {
+		m.list.Title = "Log an item for " + m.forDate.Format("Mon Jan 2 '06")
+	}
 }
 
-func makeFoodPicker(t time.Time, ii string) (pickerModel, tea.Cmd) {
+func makeFoodPicker(t time.Time, ii string, mode pickerMode, backRecipe *createRecipeModel) (pickerModel, tea.Cmd) {
 	const defaultWidth = 20
 
-	items := cfg.foodDB.All()
-	allItems := make([]list.Item, len(items))
-	for i, item := range items {
-		allItems[i] = item
+	var allItems []list.Item
+
+	for _, fi := range cfg.foodDB.All() {
+		allItems = append(allItems, pickerItem{
+			name:            fi.Name,
+			units:           fi.Units,
+			caloriesPerUnit: fi.Calories,
+			isRecipe:        false,
+		})
 	}
 
-	lh := min(len(items)+3, listHeight)
+	if mode == pickerModeLog {
+		for _, r := range cfg.recipeDB.All() {
+			allItems = append(allItems, pickerItem{
+				name:            r.Name,
+				units:           r.Units,
+				caloriesPerUnit: r.CaloriesPerUnit(),
+				isRecipe:        true,
+			})
+		}
+	}
+
+	lh := min(len(allItems)+3, listHeight)
 
 	l := list.New(allItems, itemDelegate{}, defaultWidth, lh)
 	l.SetShowStatusBar(false)
@@ -82,7 +129,7 @@ func makeFoodPicker(t time.Time, ii string) (pickerModel, tea.Cmd) {
 	ti.Width = cfg.fullWidth()
 	ti.SetValue(ii)
 
-	m := pickerModel{list: l, allItems: allItems, input: ti, forDate: t}
+	m := pickerModel{list: l, allItems: allItems, input: ti, forDate: t, mode: mode, backRecipe: backRecipe}
 	m.updateTitle()
 	return m, m.Init()
 }
@@ -124,7 +171,14 @@ func (m pickerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
-		case "esc", "ctrl+c":
+		case "ctrl+c":
+			m.quitting = true
+			return m, tea.Quit
+
+		case "esc":
+			if m.mode == pickerModeIngredient && m.backRecipe != nil {
+				return *m.backRecipe, m.backRecipe.Init()
+			}
 			m.quitting = true
 			return m, tea.Quit
 
@@ -135,13 +189,24 @@ func (m pickerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// -> Make Item flow
 			return makeCreateItemModel(m.input.Value(), m)
 
-		case "enter":
-			i, ok := m.list.SelectedItem().(FoodItem)
-			if ok {
-				m.choice = i.Name
-				return makeLogFoodModel(i, m.forDate)
+		case "ctrl+r":
+			if m.mode != pickerModeLog {
+				break
 			}
-			return m, tea.Quit
+			return makeCreateRecipeModel(m)
+
+		case "enter":
+			pi, ok := m.list.SelectedItem().(pickerItem)
+			if !ok {
+				return m, tea.Quit
+			}
+			m.choice = pi.name
+
+			if m.mode == pickerModeIngredient {
+				return makeLogFoodModelForIngredient(pi, m)
+			}
+			return makeLogFoodModel(pi, m.forDate)
+
 		case "up", "down":
 			var cmd tea.Cmd
 			m.list, cmd = m.list.Update(msg)
@@ -163,7 +228,7 @@ func (m pickerModel) View() string {
 		return quitting()
 	}
 	title := TitleStyle.Render(m.list.Title)
-	help_text := "↑/↓: move • enter: select • esc: quit"
+	help_text := "↑/↓: move • enter: select • esc: back"
 	if len(m.input.Value()) > 0 {
 		if m.hasExactMatch {
 			help_text += "\n(this item exists)"
@@ -172,6 +237,9 @@ func (m pickerModel) View() string {
 		}
 	} else {
 		help_text += "\nctrl+n: create new item"
+	}
+	if m.mode == pickerModeLog {
+		help_text += "  ctrl+r: create recipe"
 	}
 	help := HelpStyle.Render(help_text)
 	return ViewStyle.Render(fmt.Sprintf("%s\n\n%s\n\n%s\n\n%s", title, m.list.View(), m.input.View(), help))

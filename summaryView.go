@@ -74,7 +74,11 @@ func (m *summaryViewModel) logsForView() []log {
 func rowsForLogs(l []log) []table.Row {
 	ret := make([]table.Row, len(l))
 	for i, item := range l {
-		ret[i] = table.Row{item.item.Name, fmt.Sprintf("%g %s", item.quantity, item.item.Units), fmt.Sprintf("%d", item.calories)}
+		name := item.name
+		if item.isRecipe {
+			name = "◈ " + name
+		}
+		ret[i] = table.Row{name, fmt.Sprintf("%g %s", item.quantity, item.units), fmt.Sprintf("%d", item.calories)}
 	}
 	return ret
 }
@@ -123,7 +127,7 @@ func (m summaryViewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.quitting = true
 			return m, tea.Quit
 		case "a":
-			return makeFoodPicker(m.viewing, "")
+			return makeFoodPicker(m.viewing, "", pickerModeLog, nil)
 		case "d":
 			m.deleteRow(m.table.Cursor())
 		case "left", "h":

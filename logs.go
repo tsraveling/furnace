@@ -11,9 +11,11 @@ import (
 
 type log struct {
 	date     time.Time
-	item     *FoodItem
+	name     string
+	units    string
 	quantity float64
 	calories int
+	isRecipe bool
 	line     int
 }
 
@@ -37,7 +39,7 @@ func loadLogs() []log {
 		}
 
 		parts := strings.Split(line, "|")
-		if len(parts) != 3 {
+		if len(parts) != 3 && len(parts) != 4 {
 			continue
 		}
 
@@ -46,24 +48,40 @@ func loadLogs() []log {
 			continue
 		}
 
-		// Format: date | itemName | quantity
 		itemName := strings.TrimSpace(parts[1])
 		quantity, err := strconv.ParseFloat(strings.TrimSpace(parts[2]), 64)
 		if err != nil {
 			continue
 		}
 
-		item := cfg.foodDB.Get(itemName)
-		if item == nil {
-			continue
+		isRecipe := len(parts) == 4 && strings.TrimSpace(parts[3]) == "recipe"
+
+		var calories int
+		var units string
+
+		if isRecipe {
+			recipe := cfg.recipeDB.Get(itemName)
+			if recipe == nil {
+				continue
+			}
+			calories = int(float64(recipe.CaloriesPerUnit()) * quantity)
+			units = recipe.Units
+		} else {
+			food := cfg.foodDB.Get(itemName)
+			if food == nil {
+				continue
+			}
+			calories = int(float64(food.Calories) * quantity)
+			units = food.Units
 		}
 
-		calories := int(float64(item.Calories) * quantity)
 		logs = append(logs, log{
 			date:     date,
-			item:     item,
+			name:     itemName,
+			units:    units,
 			quantity: quantity,
 			calories: calories,
+			isRecipe: isRecipe,
 			line:     lineNum,
 		})
 	}
@@ -86,6 +104,20 @@ func writeLog(itemName string, quantity float64, date time.Time) error {
 	defer f.Close()
 
 	line := fmt.Sprintf("%s | %s | %.2f\n", date.Format("2006-01-02"), itemName, quantity)
+	_, err = f.WriteString(line)
+	return err
+}
+
+func writeRecipeLog(recipeName string, quantity float64, date time.Time) error {
+	path := cfg.getPath("logs.md")
+
+	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	line := fmt.Sprintf("%s | %s | %.2f | recipe\n", date.Format("2006-01-02"), recipeName, quantity)
 	_, err = f.WriteString(line)
 	return err
 }
