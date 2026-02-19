@@ -11,7 +11,7 @@ import (
 type createRecipeField int
 
 const (
-	crFieldName         createRecipeField = iota
+	crFieldName createRecipeField = iota
 	crFieldUnits
 	crFieldIngredients
 	crFieldOtherCalories
@@ -31,7 +31,7 @@ type createRecipeModel struct {
 
 func makeCreateRecipeModel(back pickerModel) (createRecipeModel, tea.Cmd) {
 	n := textinput.New()
-	n.Placeholder = "e.g. Chicken Stir Fry"
+	n.Placeholder = "e.g. Crawfish Etoufee"
 	n.Focus()
 	n.Width = min(30, cfg.fullWidth())
 	n.Prompt = "> "
@@ -175,12 +175,12 @@ func (m createRecipeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				return m, nil
 			}
-		case "up":
+		case "up", "k":
 			if m.focused == crFieldIngredients && m.ingredientCursor > 0 {
 				m.ingredientCursor--
 				return m, nil
 			}
-		case "down":
+		case "down", "j":
 			if m.focused == crFieldIngredients && m.ingredientCursor < len(m.ingredients)-1 {
 				m.ingredientCursor++
 				return m, nil
@@ -223,22 +223,19 @@ func (m createRecipeModel) View() string {
 			if food != nil {
 				calInfo = fmt.Sprintf(" (%d cal)", int(float64(food.Calories)*part.Quantity))
 			}
-			prefix := "  "
 			if m.focused == crFieldIngredients && i == m.ingredientCursor {
-				prefix = "● "
-			}
-			line := fmt.Sprintf("%s%s x%g%s", prefix, part.Food, part.Quantity, calInfo)
-			if m.focused == crFieldIngredients && i == m.ingredientCursor {
+				line := fmt.Sprintf("● %s x%g%s", part.Food, part.Quantity, calInfo)
 				ingredientLines += SelectedItemStyle.Render(line) + "\n"
 			} else {
-				ingredientLines += ItemStyle.Render(line) + "\n"
+				line := fmt.Sprintf("- %s x%g%s", part.Food, part.Quantity, calInfo)
+				ingredientLines += UnselectedItemStyle.Render(line) + "\n"
 			}
 		}
 	}
 
 	var ingredientHelp string
 	if m.focused == crFieldIngredients {
-		ingredientHelp = HelpStyle.Render("a: add ingredient  x: delete  enter: done")
+		ingredientHelp = HelpStyle.Render("\na: add ingredient  x: delete  enter: done")
 	}
 
 	// Other calories
@@ -250,7 +247,7 @@ func (m createRecipeModel) View() string {
 		errMsg = ErrorStyle.Render(m.err.Error())
 	}
 
-	body := fmt.Sprintf("%s\n\nName:\n%s\n\nUnits:\n%s\n\nIngredients:\n%s%s\n\nOther Calories per unit:\n%s\n\n%s",
+	body := fmt.Sprintf("%s\n\nName:\n%s\n\nUnits:\n%s\n\nIngredients:\n\n%s%s\n\nOther Calories per unit:\n%s\n\n%s",
 		title, ni, ui, ingredientLines, ingredientHelp, oc, errMsg)
 	return ViewStyle.Render(body)
 }

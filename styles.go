@@ -8,6 +8,7 @@ var (
 	ColorSecondary = lipgloss.Color("170")
 	ColorError     = lipgloss.Color("124")
 	ColorMuted     = lipgloss.Color("240")
+	ColorDimBright = lipgloss.Color("248")
 	ColorBasic     = lipgloss.Color("250")
 	ColorActive    = lipgloss.Color("76")
 	ColorRecipe    = lipgloss.Color("214")
@@ -37,6 +38,10 @@ var (
 	SelectedItemStyle = lipgloss.NewStyle().
 				PaddingLeft(0).
 				Foreground(ColorSecondary)
+
+	UnselectedItemStyle = lipgloss.NewStyle().
+				PaddingLeft(0).
+				Foreground(ColorDimBright)
 
 	RecipeItemStyle = lipgloss.NewStyle().
 			PaddingLeft(2).
