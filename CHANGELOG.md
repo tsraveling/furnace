@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.3.0 - 2026-02-19
+#### Features
+- adds ability to create recipes from existing ingredients (#16) - (17b94d1) - Tim Raveling
+
+- - -
+
 ## 0.2.0 - 2026-01-20
 #### Features
 - adds last five days summary to quitting state (#15) - (5e366d6) - Tim Raveling
