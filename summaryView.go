@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
+	"github.com/charmbracelet/bubbles/progress"
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -105,6 +105,28 @@ func (m *summaryViewModel) deleteRow(i int) {
 	m.table.SetCursor(max(0, m.table.Cursor()-1))
 }
 
+func (m summaryViewModel) getProgress() float64 {
+	if cfg.dailyTarget <= 0 {
+		return 0
+	}
+	p := float64(m.total) / float64(cfg.dailyTarget)
+	if p > 1.0 {
+		return 1.0
+	}
+	return p
+}
+
+func (m summaryViewModel) gradientColors() (string, string) {
+	p := m.getProgress()
+	if p >= 0.9 {
+		return GradientRedDark, GradientRedBright
+	}
+	if p >= 0.7 {
+		return GradientOrangeDark, GradientOrangeLight
+	}
+	return GradientGreenDark, GradientGreenLight
+}
+
 func sameDay(t1, t2 time.Time) bool {
 	y1, m1, d1 := t1.Date()
 	y2, m2, d2 := t2.Date()
@@ -165,12 +187,22 @@ func (m summaryViewModel) View() string {
 	}
 	title := TitleStyle.AlignHorizontal(lipgloss.Center).Width(cfg.fullWidth()).Render(title_text)
 	table := m.table.View()
-	total := ActiveStyle.PaddingRight(2).Render(fmt.Sprintf("%d calories", m.total))
+	w := cfg.fullWidth()
+
+	// Total line: page indicator left, current/target right
+	current := ActiveStyle.Render(fmt.Sprintf("%d", m.total))
+	target := lipgloss.NewStyle().Foreground(ColorBasic).Render(fmt.Sprintf("%d", cfg.dailyTarget))
+	currentTarget := fmt.Sprintf("%s/%s", current, target)
 	count := HelpStyle.Render(fmt.Sprintf("%d/%d", m.table.Cursor()+1, len(m.table.Rows())))
-	totalLabel := fmt.Sprintf("Total: %s", total)
-	spacer_width := max(cfg.fullWidth()-(lipgloss.Width(totalLabel)+lipgloss.Width(count)), 1)
-	spacer := strings.Repeat(" ", spacer_width)
-	totalLine := lipgloss.JoinHorizontal(lipgloss.Top, count, spacer, totalLabel)
+	spacer_width := max(w-(lipgloss.Width(currentTarget)+lipgloss.Width(count)), 1)
+	// Progress bar
+	left, right := m.gradientColors()
+	bar := progress.New(progress.WithGradient(left, right), progress.WithoutPercentage())
+	bar.Width = spacer_width - 6
+	bar.EmptyColor = BarEmptyColor
+	prog := bar.ViewAs(m.getProgress())
+	totalLine := lipgloss.JoinHorizontal(lipgloss.Top, count, "  ", prog, "  ", currentTarget)
+
 	//help := "↑↓jk navigate  ←→hl change day  a add  e edit  d delete  E edit food  f fill mode"
 	help := "↑↓jk navigate  ←→hl change day  a add  d delete"
 	wrappedHelp := wordwrap.String(help, cfg.fullWidth())

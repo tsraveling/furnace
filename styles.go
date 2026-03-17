@@ -13,6 +13,16 @@ var (
 	ColorActive    = lipgloss.Color("76")
 	ColorRecipe    = lipgloss.Color("214")
 
+	// Gradient colors for progress bar — hex because bubbles/progress
+	// passes these to go-colorful which requires hex strings.
+	GradientGreenDark   = "#00af00" // ANSI 34
+	GradientGreenLight  = "#5fd700" // ANSI 76 (ColorActive)
+	GradientOrangeDark  = "#af8700" // ANSI 136
+	GradientOrangeLight = "#ff8700" // ANSI 208
+	GradientRedDark     = "#af0000" // ANSI 124
+	GradientRedBright   = "#ff0000" // ANSI 196
+	BarEmptyColor       = "#5f5f00" // ANSI 58
+
 	// Styles
 
 	ViewStyle = lipgloss.NewStyle().

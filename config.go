@@ -11,7 +11,8 @@ import (
 type config struct {
 
 	// Config file
-	homeFolder string
+	homeFolder  string
+	dailyTarget int
 
 	// Loaded at beginning
 	foodDB   *FoodDB
@@ -67,6 +68,10 @@ func readConfig() config {
 	ret := config{ww: 30}
 	section := cfg_file.Section("general")
 	ret.homeFolder = expandPath(section.Key("homeFolder").String())
+	ret.dailyTarget, err = section.Key("dailyTarget").Int()
+	if err != nil {
+		panic(err)
+	}
 
 	// Load food library
 	db, err := LoadFoodDB(filepath.Join(ret.homeFolder, "food.md"))
