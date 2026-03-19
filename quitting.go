@@ -23,7 +23,6 @@ func quitting() string {
 
 	dateStyle := lipgloss.NewStyle().Foreground(ColorBasic).Width(12)
 	calWidth := 8
-	target := cfg.dailyTarget
 
 	totalCal := 0
 	nonZeroDays := 0
@@ -43,7 +42,7 @@ func quitting() string {
 		}
 		cs := lipgloss.NewStyle().Foreground(calColor).Width(calWidth)
 		targetColor := ColorMuted
-		if sum > target {
+		if sum > cfg.dailyTarget {
 			targetColor = ColorError
 		}
 		ts := lipgloss.NewStyle().Foreground(targetColor)
@@ -54,7 +53,12 @@ func quitting() string {
 			ts = ts.Bold(true)
 		}
 
-		ret += ds.Render(date) + cs.Render(fmt.Sprintf("%d", sum)) + ts.Render(fmt.Sprintf("/ %d", target)) + "\n"
+		// Show w/ targets if set, otherwise just show
+		if cfg.dailyTarget > 0 {
+			ret += ds.Render(date) + cs.Render(fmt.Sprintf("%d", sum)) + ts.Render(fmt.Sprintf("/ %d", cfg.dailyTarget)) + "\n"
+		} else {
+			ret += ds.Render(date) + cs.Render(fmt.Sprintf("%d", sum)) + "\n"
+		}
 	}
 
 	avg := 0
@@ -62,12 +66,16 @@ func quitting() string {
 		avg = totalCal / nonZeroDays
 	}
 	color := ColorActive
-	if avg > target {
+	if cfg.dailyTarget > 0 && avg > cfg.dailyTarget {
 		color = ColorError
 	}
 	avgCalStyle := lipgloss.NewStyle().Foreground(color).Width(calWidth)
 	avgTargetStyle := lipgloss.NewStyle().Foreground(color)
-	ret += "\n" + dateStyle.Render("Average") + avgCalStyle.Render(fmt.Sprintf("%d", avg)) + avgTargetStyle.Render(fmt.Sprintf("/ %d", target)) + "\n"
+	if cfg.dailyTarget > 0 {
+		ret += "\n" + dateStyle.Render("Average") + avgCalStyle.Render(fmt.Sprintf("%d", avg)) + avgTargetStyle.Render(fmt.Sprintf("/ %d", cfg.dailyTarget)) + "\n"
+	} else {
+		ret += "\n" + dateStyle.Render("Average") + avgCalStyle.Render(fmt.Sprintf("%d", avg)) + "\n"
+	}
 
 	return ret
 }

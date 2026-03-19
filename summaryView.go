@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/charmbracelet/bubbles/progress"
@@ -194,14 +195,23 @@ func (m summaryViewModel) View() string {
 	target := lipgloss.NewStyle().Foreground(ColorBasic).Render(fmt.Sprintf("%d", cfg.dailyTarget))
 	currentTarget := fmt.Sprintf("%s/%s", current, target)
 	count := HelpStyle.Render(fmt.Sprintf("%d/%d", m.table.Cursor()+1, len(m.table.Rows())))
-	spacer_width := max(w-(lipgloss.Width(currentTarget)+lipgloss.Width(count)), 1)
-	// Progress bar
-	left, right := m.gradientColors()
-	bar := progress.New(progress.WithGradient(left, right), progress.WithoutPercentage())
-	bar.Width = spacer_width - 6
-	bar.EmptyColor = BarEmptyColor
-	prog := bar.ViewAs(m.getProgress())
-	totalLine := lipgloss.JoinHorizontal(lipgloss.Top, count, "  ", prog, "  ", currentTarget)
+	var totalLine string
+
+	if cfg.dailyTarget > 0 {
+		// Progress bar
+		left, right := m.gradientColors()
+		bar := progress.New(progress.WithGradient(left, right), progress.WithoutPercentage())
+		spacerWidth := max(w-(lipgloss.Width(currentTarget)+lipgloss.Width(count)), 1)
+		bar.Width = spacerWidth - 6
+		bar.EmptyColor = BarEmptyColor
+		prog := bar.ViewAs(m.getProgress())
+		totalLine = lipgloss.JoinHorizontal(lipgloss.Top, count, "  ", prog, "  ", currentTarget)
+	} else {
+		totalLabel := fmt.Sprintf("Total: %s", ActiveStyle.Render(fmt.Sprintf("%d calories", m.total)))
+		spacerWidth := max(w-(lipgloss.Width(totalLabel)+5), 1)
+		spacer := strings.Repeat(" ", spacerWidth)
+		totalLine = lipgloss.JoinHorizontal(lipgloss.Top, count, spacer, totalLabel)
+	}
 
 	//help := "↑↓jk navigate  ←→hl change day  a add  e edit  d delete  E edit food  f fill mode"
 	help := "↑↓jk navigate  ←→hl change day  a add  d delete"
