@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/charmbracelet/bubbles/progress"
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -48,11 +49,16 @@ func (m *summaryViewModel) reloadLogs() {
 
 func makeSummaryViewModel(d time.Time) (summaryViewModel, tea.Cmd) {
 	logs := loadLogs()
+	s := table.DefaultStyles()
+	s.Header = s.Header.Foreground(lipgloss.Color("248")).Italic(true).Bold(false)
+	s.Selected = s.Selected.
+		Foreground(ColorSelection)
 	t := table.New(
 		table.WithColumns(getColumns()),
 		table.WithFocused(true),
 		table.WithHeight(7),
 		table.WithWidth(cfg.fullWidth()),
+		table.WithStyles(s),
 	)
 	m := summaryViewModel{logs: logs, viewing: d, zoom: zoomDay, table: t}
 	m.refreshRows()
@@ -103,6 +109,31 @@ func (m *summaryViewModel) deleteRow(i int) {
 	m.reloadLogs()
 	m.refreshRows()
 	m.table.SetCursor(max(0, m.table.Cursor()-1))
+}
+
+func (m summaryViewModel) getProgress() float64 {
+	if cfg.dailyTarget <= 0 {
+		return 0
+	}
+	p := float64(m.total) / float64(cfg.dailyTarget)
+	if p > 1.0 {
+		return 1.0
+	}
+	return p
+}
+
+func (m summaryViewModel) gradientColors() (string, string) {
+	p := m.getProgress()
+	if p >= 1.0 {
+		return GradientGrayDark, GradientGrayLight
+	}
+	if p >= 0.9 {
+		return GradientRedDark, GradientRedBright
+	}
+	if p >= 0.7 {
+		return GradientOrangeDark, GradientOrangeLight
+	}
+	return GradientGreenDark, GradientGreenLight
 }
 
 func sameDay(t1, t2 time.Time) bool {
@@ -163,14 +194,39 @@ func (m summaryViewModel) View() string {
 		}
 		title_text = m.viewing.Format(dfmt)
 	}
-	title := TitleStyle.AlignHorizontal(lipgloss.Center).Width(cfg.fullWidth()).Render(title_text)
+	title := TitleStyle.AlignHorizontal(lipgloss.Center).Width(cfg.fullWidth() - 4).Render(title_text)
+
+	// This is the table of things we et today
 	table := m.table.View()
-	total := ActiveStyle.PaddingRight(2).Render(fmt.Sprintf("%d calories", m.total))
+	w := cfg.fullWidth()
+
+	// Total line: page indicator left, current/target right
+	currentStyle := ActiveStyle
+	if cfg.dailyTarget > 0 && m.total > cfg.dailyTarget {
+		currentStyle = ErrorStyle
+	}
+	current := currentStyle.Render(fmt.Sprintf("%d", m.total))
+	target := lipgloss.NewStyle().Foreground(ColorBasic).Render(fmt.Sprintf("%d", cfg.dailyTarget))
+	currentTarget := fmt.Sprintf("%s/%s", current, target)
 	count := HelpStyle.Render(fmt.Sprintf("%d/%d", m.table.Cursor()+1, len(m.table.Rows())))
-	totalLabel := fmt.Sprintf("Total: %s", total)
-	spacer_width := max(cfg.fullWidth()-(lipgloss.Width(totalLabel)+lipgloss.Width(count)), 1)
-	spacer := strings.Repeat(" ", spacer_width)
-	totalLine := lipgloss.JoinHorizontal(lipgloss.Top, count, spacer, totalLabel)
+	var totalLine string
+
+	if cfg.dailyTarget > 0 {
+		// Progress bar
+		left, right := m.gradientColors()
+		bar := progress.New(progress.WithGradient(left, right), progress.WithoutPercentage())
+		spacerWidth := max(w-(lipgloss.Width(currentTarget)+lipgloss.Width(count)), 1)
+		bar.Width = spacerWidth - 6
+		bar.EmptyColor = BarEmptyColor
+		prog := bar.ViewAs(m.getProgress())
+		totalLine = lipgloss.JoinHorizontal(lipgloss.Top, count, "  ", prog, "  ", currentTarget)
+	} else {
+		totalLabel := fmt.Sprintf("Total: %s", ActiveStyle.Render(fmt.Sprintf("%d calories", m.total)))
+		spacerWidth := max(w-(lipgloss.Width(totalLabel)+5), 1)
+		spacer := strings.Repeat(" ", spacerWidth)
+		totalLine = lipgloss.JoinHorizontal(lipgloss.Top, count, spacer, totalLabel)
+	}
+
 	//help := "↑↓jk navigate  ←→hl change day  a add  e edit  d delete  E edit food  f fill mode"
 	help := "↑↓jk navigate  ←→hl change day  a add  d delete"
 	wrappedHelp := wordwrap.String(help, cfg.fullWidth())

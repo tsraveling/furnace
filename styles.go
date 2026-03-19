@@ -5,13 +5,25 @@ import "github.com/charmbracelet/lipgloss"
 var (
 	// Colors
 	ColorPrimary   = lipgloss.Color("205")
-	ColorSecondary = lipgloss.Color("170")
-	ColorError     = lipgloss.Color("124")
+	ColorSelection = lipgloss.Color("215")
+	ColorError     = lipgloss.Color("197")
 	ColorMuted     = lipgloss.Color("240")
 	ColorDimBright = lipgloss.Color("248")
 	ColorBasic     = lipgloss.Color("250")
 	ColorActive    = lipgloss.Color("76")
 	ColorRecipe    = lipgloss.Color("214")
+
+	// Gradient colors for progress bar — hex because bubbles/progress
+	// passes these to go-colorful which requires hex strings.
+	GradientGreenDark   = "#00af00" // ANSI 34
+	GradientGreenLight  = "#5fd700" // ANSI 76 (ColorActive)
+	GradientOrangeDark  = "#af8700" // ANSI 136
+	GradientOrangeLight = "#ff8700" // ANSI 208
+	GradientRedDark     = "#af0000" // ANSI 124
+	GradientRedBright   = "#ff0000" // ANSI 196
+	GradientGrayDark    = "#1c1917"
+	GradientGrayLight   = "#57534e"
+	BarEmptyColor       = "#5f5f00" // ANSI 58
 
 	// Styles
 
@@ -37,7 +49,7 @@ var (
 
 	SelectedItemStyle = lipgloss.NewStyle().
 				PaddingLeft(0).
-				Foreground(ColorSecondary)
+				Foreground(ColorSelection)
 
 	UnselectedItemStyle = lipgloss.NewStyle().
 				PaddingLeft(0).

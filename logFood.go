@@ -19,14 +19,15 @@ const (
 )
 
 type logFoodModel struct {
-	quitting     bool
-	forDate      time.Time
-	input        textinput.Model
-	loggingItem  pickerItem
-	numericValue float64
-	err          error
-	mode         logFoodMode
-	backPicker   pickerModel
+	quitting        bool
+	forDate         time.Time
+	input           textinput.Model
+	currentCalories int
+	loggingItem     pickerItem
+	numericValue    float64
+	err             error
+	mode            logFoodMode
+	backPicker      pickerModel
 }
 
 func makeLogFoodModel(pi pickerItem, d time.Time) (logFoodModel, tea.Cmd) {
@@ -36,8 +37,10 @@ func makeLogFoodModel(pi pickerItem, d time.Time) (logFoodModel, tea.Cmd) {
 	ti.Focus()
 	ti.CharLimit = 16
 	ti.Width = cfg.fullWidth()
+	logs := loadLogs()
+	curr := countCaloriesForDate(logs, d)
 
-	m := logFoodModel{input: ti, loggingItem: pi, forDate: d, mode: logFoodModeNormal}
+	m := logFoodModel{input: ti, loggingItem: pi, forDate: d, currentCalories: curr, mode: logFoodModeNormal}
 	return m, m.Init()
 }
 
@@ -50,10 +53,11 @@ func makeLogFoodModelForIngredient(pi pickerItem, back pickerModel) (logFoodMode
 	ti.Width = cfg.fullWidth()
 
 	m := logFoodModel{
-		input:       ti,
-		loggingItem: pi,
-		mode:        logFoodModeIngredient,
-		backPicker:  back,
+		input:           ti,
+		loggingItem:     pi,
+		mode:            logFoodModeIngredient,
+		backPicker:      back,
+		currentCalories: -1,
 	}
 	return m, m.Init()
 }
@@ -124,12 +128,29 @@ func (m logFoodModel) View() string {
 	title := TitleStyle.Render("Logging " + m.loggingItem.name + ":")
 	var helper string
 	if len(m.input.Value()) == 0 {
-		helper = HelpStyle.Render("Enter a value to see the caloric value.")
+		helper = HelpStyle.Render("Enter a value to see the caloric value.\n")
 	} else if m.err != nil {
 		helper = ErrorStyle.Render(m.err.Error())
 	} else {
-		calc := fmt.Sprintf("in %s: %d calories", m.loggingItem.units, int(float64(m.loggingItem.caloriesPerUnit)*m.numericValue))
-		helper = ActiveStyle.Render(calc)
+		itemAmount := int(float64(m.loggingItem.caloriesPerUnit) * m.numericValue)
+		calc := fmt.Sprintf("in %s: %d calories", m.loggingItem.units, itemAmount)
+		tot := ""
+		if m.currentCalories >= 0 {
+			previousAmount := UnselectedItemStyle.Render(strconv.Itoa(m.currentCalories))
+			na := m.currentCalories + itemAmount
+			naStyle := ActiveStyle
+			if cfg.dailyTarget > 0 && na > cfg.dailyTarget {
+				naStyle = ErrorStyle
+			}
+			newAmount := naStyle.Render(strconv.Itoa(na))
+			if cfg.dailyTarget > 0 {
+				targetAmount := UnselectedItemStyle.Render(strconv.Itoa(cfg.dailyTarget))
+				tot = fmt.Sprintf("Today: %s -> %s / %s calories", previousAmount, newAmount, targetAmount)
+			} else {
+				tot = fmt.Sprintf("Today: %s -> %s calories", previousAmount, newAmount)
+			}
+		}
+		helper = fmt.Sprintf("%s\n%s", ActiveStyle.Render(calc), tot)
 	}
 	body := title + "\n\n" + m.input.View() + "\n\n" + helper
 	return ViewStyle.Render(body)
