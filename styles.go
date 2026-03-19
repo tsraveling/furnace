@@ -21,6 +21,8 @@ var (
 	GradientOrangeLight = "#ff8700" // ANSI 208
 	GradientRedDark     = "#af0000" // ANSI 124
 	GradientRedBright   = "#ff0000" // ANSI 196
+	GradientGrayDark    = "#1c1917"
+	GradientGrayLight   = "#57534e"
 	BarEmptyColor       = "#5f5f00" // ANSI 58
 
 	// Styles

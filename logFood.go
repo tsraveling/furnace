@@ -138,14 +138,17 @@ func (m logFoodModel) View() string {
 		if m.currentCalories >= 0 {
 			previousAmount := UnselectedItemStyle.Render(strconv.Itoa(m.currentCalories))
 			na := m.currentCalories + itemAmount
-			var newAmount string
-			if na > cfg.dailyTarget {
-				newAmount = ErrorStyle.Render(strconv.Itoa(na))
-			} else {
-				newAmount = ActiveStyle.Render(strconv.Itoa(na))
+			naStyle := ActiveStyle
+			if cfg.dailyTarget > 0 && na > cfg.dailyTarget {
+				naStyle = ErrorStyle
 			}
-			targetAmount := UnselectedItemStyle.Render(strconv.Itoa(cfg.dailyTarget))
-			tot = fmt.Sprintf("Today: %s -> %s / %s", previousAmount, newAmount, targetAmount)
+			newAmount := naStyle.Render(strconv.Itoa(na))
+			if cfg.dailyTarget > 0 {
+				targetAmount := UnselectedItemStyle.Render(strconv.Itoa(cfg.dailyTarget))
+				tot = fmt.Sprintf("Today: %s -> %s / %s calories", previousAmount, newAmount, targetAmount)
+			} else {
+				tot = fmt.Sprintf("Today: %s -> %s calories", previousAmount, newAmount)
+			}
 		}
 		helper = fmt.Sprintf("%s\n%s", ActiveStyle.Render(calc), tot)
 	}

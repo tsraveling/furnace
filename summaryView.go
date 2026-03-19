@@ -119,6 +119,9 @@ func (m summaryViewModel) getProgress() float64 {
 
 func (m summaryViewModel) gradientColors() (string, string) {
 	p := m.getProgress()
+	if p >= 1.0 {
+		return GradientGrayDark, GradientGrayLight
+	}
 	if p >= 0.9 {
 		return GradientRedDark, GradientRedBright
 	}
@@ -191,7 +194,11 @@ func (m summaryViewModel) View() string {
 	w := cfg.fullWidth()
 
 	// Total line: page indicator left, current/target right
-	current := ActiveStyle.Render(fmt.Sprintf("%d", m.total))
+	currentStyle := ActiveStyle
+	if cfg.dailyTarget > 0 && m.total > cfg.dailyTarget {
+		currentStyle = ErrorStyle
+	}
+	current := currentStyle.Render(fmt.Sprintf("%d", m.total))
 	target := lipgloss.NewStyle().Foreground(ColorBasic).Render(fmt.Sprintf("%d", cfg.dailyTarget))
 	currentTarget := fmt.Sprintf("%s/%s", current, target)
 	count := HelpStyle.Render(fmt.Sprintf("%d/%d", m.table.Cursor()+1, len(m.table.Rows())))
