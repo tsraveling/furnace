@@ -26,6 +26,7 @@ homeFolder = "~/notes/_sync/furnace/"
 
 - Set `homeFolder` to the folder where you would like Furnace's logs, food, and recipes files to go (mine is in my Obsidian folder so it syncs between devices)
 - Set `dailyTarget` if you would like to see a daily progress bar and how much you're eating compared to whatever daily target you'd like to set.
+3. **Then simply run `furnace` in your terminal to use!**
 
 That's it!
 
