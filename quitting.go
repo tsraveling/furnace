@@ -29,14 +29,7 @@ func quitting() string {
 	nonZeroDays := 0
 	for i := range 5 {
 		day := today.AddDate(0, 0, -i)
-		y, mo, d := day.Date()
-		sum := 0
-		for _, l := range logs {
-			ly, lm, ld := l.date.Date()
-			if ly == y && lm == mo && ld == d {
-				sum += l.calories
-			}
-		}
+		sum := countCaloriesForDate(logs, day)
 		if sum > 0 {
 			totalCal += sum
 			nonZeroDays++

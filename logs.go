@@ -19,6 +19,18 @@ type log struct {
 	line     int
 }
 
+func countCaloriesForDate(logs []log, day time.Time) int {
+	y, mo, d := day.Date()
+	sum := 0
+	for _, l := range logs {
+		ly, lm, ld := l.date.Date()
+		if ly == y && lm == mo && ld == d {
+			sum += l.calories
+		}
+	}
+	return sum
+}
+
 func loadLogs() []log {
 	path := cfg.getPath("logs.md")
 
