@@ -5,8 +5,8 @@ import "github.com/charmbracelet/lipgloss"
 var (
 	// Colors
 	ColorPrimary   = lipgloss.Color("205")
-	ColorSecondary = lipgloss.Color("170")
-	ColorError     = lipgloss.Color("124")
+	ColorSelection = lipgloss.Color("215")
+	ColorError     = lipgloss.Color("197")
 	ColorMuted     = lipgloss.Color("240")
 	ColorDimBright = lipgloss.Color("248")
 	ColorBasic     = lipgloss.Color("250")
@@ -49,7 +49,7 @@ var (
 
 	SelectedItemStyle = lipgloss.NewStyle().
 				PaddingLeft(0).
-				Foreground(ColorSecondary)
+				Foreground(ColorSelection)
 
 	UnselectedItemStyle = lipgloss.NewStyle().
 				PaddingLeft(0).

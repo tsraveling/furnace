@@ -49,11 +49,16 @@ func (m *summaryViewModel) reloadLogs() {
 
 func makeSummaryViewModel(d time.Time) (summaryViewModel, tea.Cmd) {
 	logs := loadLogs()
+	s := table.DefaultStyles()
+	s.Header = s.Header.Foreground(lipgloss.Color("248")).Italic(true).Bold(false)
+	s.Selected = s.Selected.
+		Foreground(ColorSelection)
 	t := table.New(
 		table.WithColumns(getColumns()),
 		table.WithFocused(true),
 		table.WithHeight(7),
 		table.WithWidth(cfg.fullWidth()),
+		table.WithStyles(s),
 	)
 	m := summaryViewModel{logs: logs, viewing: d, zoom: zoomDay, table: t}
 	m.refreshRows()
@@ -189,7 +194,9 @@ func (m summaryViewModel) View() string {
 		}
 		title_text = m.viewing.Format(dfmt)
 	}
-	title := TitleStyle.AlignHorizontal(lipgloss.Center).Width(cfg.fullWidth()).Render(title_text)
+	title := TitleStyle.AlignHorizontal(lipgloss.Center).Width(cfg.fullWidth() - 4).Render(title_text)
+
+	// This is the table of things we et today
 	table := m.table.View()
 	w := cfg.fullWidth()
 
