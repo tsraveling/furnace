@@ -2,6 +2,14 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.4.0 - 2026-03-19
+#### Features
+- adds daily caloric target and polishes UI. (#17) - (1f514a8) - Tim Raveling
+#### Bug Fixes
+- untracked binary - (25bfc47) - Tim Raveling
+
+- - -
+
 ## 0.3.0 - 2026-02-19
 #### Features
 - adds ability to create recipes from existing ingredients (#16) - (17b94d1) - Tim Raveling
