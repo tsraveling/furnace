@@ -2,6 +2,15 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## v0.4.1 - 2026-07-06
+#### Bug Fixes
+- homebrew release - (fbea4f5) - Tim Raveling
+- print error on crash - (fed6b6f) - Tim Raveling
+#### Miscellaneous Chores
+- add cocogitto versioning - (37cf410) - Tim Raveling
+
+- - -
+
 ## 0.4.0 - 2026-03-19
 #### Features
 - adds daily caloric target and polishes UI. (#17) - (1f514a8) - Tim Raveling
