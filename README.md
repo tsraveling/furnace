@@ -11,10 +11,48 @@ You can:
 - Optionally set a daily goal
 - See a rolling 5-day average
 
-## Installation and Setup
+## Installation
 
-1. While this is in alpha, install locally by running `go install` from the repo root.
-2. Copy this into `.config/furnace/config.ini` (feel free to change the path to whereever you'd like your food and log files to go):
+### Homebrew (macOS)
+
+```sh
+brew install tsraveling/tap/furnace
+```
+
+### Scoop (Windows)
+
+```sh
+scoop bucket add tsraveling https://github.com/tsraveling/scoop-bucket
+scoop install furnace
+```
+
+### Arch Linux (AUR)
+
+```sh
+yay -S furnace-bin
+```
+
+### Debian / Ubuntu / Fedora / Alpine
+
+Download the `.deb`, `.rpm`, or `.apk` from the [latest release](https://github.com/tsraveling/furnace/releases/latest) and install with your package manager, e.g.:
+
+```sh
+sudo dpkg -i furnace_*.deb
+```
+
+### Go
+
+```sh
+go install github.com/tsraveling/furnace@latest
+```
+
+### Manual
+
+Download the archive for your platform from the [latest release](https://github.com/tsraveling/furnace/releases/latest), extract, and place `furnace` on your `PATH`.
+
+## Setup
+
+1. Copy this into `.config/furnace/config.ini` (feel free to change the path to whereever you'd like your food and log files to go):
 
 ```
 [general]
@@ -26,7 +64,7 @@ homeFolder = "~/notes/_sync/furnace/"
 
 - Set `homeFolder` to the folder where you would like Furnace's logs, food, and recipes files to go (mine is in my Obsidian folder so it syncs between devices)
 - Set `dailyTarget` if you would like to see a daily progress bar and how much you're eating compared to whatever daily target you'd like to set.
-3. **Then simply run `furnace` in your terminal to use!**
+2. **Then simply run `furnace` in your terminal to use!**
 
 That's it!
 

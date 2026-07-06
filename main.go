@@ -19,6 +19,9 @@ func main() {
 		m, _ = makeSummaryViewModel(time.Now())
 	} else {
 		switch os.Args[1] {
+		case "-v", "--version":
+			fmt.Println(Version)
+			return
 		case "log":
 			// `furn log`
 			input := strings.Join(os.Args[2:], " ")

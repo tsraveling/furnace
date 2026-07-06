@@ -18,22 +18,12 @@ builds:
       - -s -w
 
 archives:
-  - format: tar.gz
+  - formats: [tar.gz]
     name_template: >-
       {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
     format_overrides:
       - goos: windows
-        format: zip
-
-brews:
-  - repository:
-      owner: tsraveling
-      name: homebrew-furnace
-    homepage: https://github.com/tsraveling/furnace
-    description: Terminal-based food tracking app
-    license: GPL-3.0
-    install: |
-      bin.install "furnace"
+        formats: [zip]
 
 changelog:
   sort: asc
@@ -42,3 +32,46 @@ changelog:
       - "^docs:"
       - "^test:"
       - "^chore:"
+
+homebrew_casks:
+  - repository:
+      owner: tsraveling
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    homepage: https://github.com/tsraveling/furnace
+    description: Terminal-based food tracking app
+    # unsigned binary: strip quarantine so Gatekeeper doesn't block it
+    hooks:
+      post:
+        install: |
+          if system_command("/usr/bin/xattr", args: ["-h"]).exit_status == 0
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/furnace"]
+          end
+
+scoops:
+  - repository:
+      owner: tsraveling
+      name: scoop-bucket
+      token: "{{ .Env.SCOOP_BUCKET_GITHUB_TOKEN }}"
+    homepage: https://github.com/tsraveling/furnace
+    description: Terminal-based food tracking app
+    license: GPL-3.0-only
+
+nfpms:
+  - homepage: https://github.com/tsraveling/furnace
+    description: Terminal-based food tracking app
+    license: GPL-3.0-only
+    maintainer: Tim Raveling <tsraveling@proton.me>
+    formats:
+      - deb
+      - rpm
+      - apk
+
+aurs:
+  - homepage: https://github.com/tsraveling/furnace
+    description: Terminal-based food tracking app
+    license: GPL-3.0-only
+    maintainers:
+      - Tim Raveling <tsraveling@proton.me>
+    private_key: "{{ .Env.AUR_KEY }}"
+    git_url: ssh://aur@aur.archlinux.org/furnace-bin.git
