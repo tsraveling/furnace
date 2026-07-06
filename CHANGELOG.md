@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## v0.4.2 - 2026-07-06
+#### Bug Fixes
+- added autopop config - (701d4d9) - Tim Raveling
+
+- - -
+
 ## v0.4.1 - 2026-07-06
 #### Bug Fixes
 - homebrew release - (fbea4f5) - Tim Raveling
