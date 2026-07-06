@@ -1,4 +1,5 @@
 from_latest_tag = true
+tag_prefix = "v"
 ignore_merge_commits = false
 ignore_fixup_commits = true
 disable_changelog = false
@@ -8,7 +9,10 @@ generate_mono_repository_package_tags = true
 branch_whitelist = []
 skip_ci = "[skip ci]"
 skip_untracked = false
-pre_bump_hooks = []
+pre_bump_hooks = [
+    "sed -i.bak 's|const Version = .*|const Version = \"{{version}}\"|' version.go && rm -f version.go.bak",
+    "git add version.go",
+]
 post_bump_hooks = []
 pre_package_bump_hooks = []
 post_package_bump_hooks = []
