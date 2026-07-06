@@ -52,21 +52,22 @@ Download the archive for your platform from the [latest release](https://github.
 
 ## Setup
 
-1. Copy this into `.config/furnace/config.ini` (feel free to change the path to whereever you'd like your food and log files to go):
+Run `furnace` in your terminal. On first run, if no config file exists, Furnace will offer to create one with defaults (`homeFolder = "~/furnace"`, `dailyTarget = 2000`). That's it!
+
+### Config
+
+Furnace reads its config from `~/.config/furnace/config.ini`:
 
 ```
 [general]
-homeFolder = "~/notes/_sync/furnace/"
+homeFolder = "~/furnace"
 
-# Uncomment this line to use a daily caloric target.
-# dailyTarget = 2000
+# Remove this line if you don't want a daily caloric target.
+dailyTarget = 2000
 ```
 
-- Set `homeFolder` to the folder where you would like Furnace's logs, food, and recipes files to go (mine is in my Obsidian folder so it syncs between devices)
-- Set `dailyTarget` if you would like to see a daily progress bar and how much you're eating compared to whatever daily target you'd like to set.
-2. **Then simply run `furnace` in your terminal to use!**
-
-That's it!
+- `homeFolder` — the folder where Furnace stores its `logs.md`, `food.md`, and `recipes.md` files (mine is in my Obsidian folder so it syncs between devices)
+- `dailyTarget` — optional; set it to see a daily progress bar comparing what you've eaten to your target. Remove it for no target.
 
 ## Usage
 

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bufio"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -48,6 +50,41 @@ func expandPath(path string) string {
 	return path
 }
 
+const defaultHomeFolder = "~/furnace"
+const defaultDailyTarget = 2000
+
+var defaultConfigFile = fmt.Sprintf(`[general]
+homeFolder = "%s"
+dailyTarget = %d
+`, defaultHomeFolder, defaultDailyTarget)
+
+// offers to create a default config; returns false if the user declines
+func promptCreateConfig(configPath string) bool {
+	fmt.Printf("Config file not found at %s\n", configPath)
+	fmt.Println("Create it with defaults?")
+	fmt.Printf("  homeFolder:  %s\n", defaultHomeFolder)
+	fmt.Printf("  dailyTarget: %d\n", defaultDailyTarget)
+	fmt.Print("[y/N]: ")
+
+	answer, _ := bufio.NewReader(os.Stdin).ReadString('\n')
+	answer = strings.ToLower(strings.TrimSpace(answer))
+	if answer != "y" && answer != "yes" {
+		return false
+	}
+
+	if err := os.MkdirAll(filepath.Dir(configPath), 0755); err != nil {
+		panic(err)
+	}
+	if err := os.WriteFile(configPath, []byte(defaultConfigFile), 0644); err != nil {
+		panic(err)
+	}
+	if err := os.MkdirAll(expandPath(defaultHomeFolder), 0755); err != nil {
+		panic(err)
+	}
+	fmt.Printf("Created %s\n", configPath)
+	return true
+}
+
 func readConfig() config {
 	// Get home
 	homeDir, err := os.UserHomeDir()
@@ -57,6 +94,14 @@ func readConfig() config {
 
 	// Path to config
 	configPath := filepath.Join(homeDir, ".config", "furnace", "config.ini")
+
+	// Offer to create the config on first run
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		if !promptCreateConfig(configPath) {
+			fmt.Println("No config created. Exiting.")
+			os.Exit(0)
+		}
+	}
 
 	// Load the INI file
 	cfg_file, err := ini.Load(configPath)
