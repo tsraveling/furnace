@@ -69,6 +69,8 @@ dailyTarget = 2000
 - `homeFolder` — the folder where Furnace stores its `logs.md`, `food.md`, and `recipes.md` files (mine is in my Obsidian folder so it syncs between devices)
 - `dailyTarget` — optional; set it to see a daily progress bar comparing what you've eaten to your target. Remove it for no target.
 
+This will automatically be set up for you when you first launch Furnace, with a daily target of 2000 and Furnace files saving to `~/furnace` by default.
+
 ## Usage
 
 You can see a **summary view** by simply typing `furnace`. This will show your logs for today and a calorie total. Follow the instructions in the help text to page through days, add items, etc. You can also log items, create food, create recipes, etc. from this view.
