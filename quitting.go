@@ -26,10 +26,10 @@ func quitting() string {
 
 	totalCal := 0
 	nonZeroDays := 0
-	for i := range 5 {
+	for i := 7; i >= 0; i-- {
 		day := today.AddDate(0, 0, -i)
 		sum := countCaloriesForDate(logs, day)
-		if sum > 0 {
+		if i > 0 && sum > 0 {
 			totalCal += sum
 			nonZeroDays++
 		}
@@ -72,9 +72,9 @@ func quitting() string {
 	avgCalStyle := lipgloss.NewStyle().Foreground(color).Width(calWidth)
 	avgTargetStyle := lipgloss.NewStyle().Foreground(color)
 	if cfg.dailyTarget > 0 {
-		ret += "\n" + dateStyle.Render("Average") + avgCalStyle.Render(fmt.Sprintf("%d", avg)) + avgTargetStyle.Render(fmt.Sprintf("/ %d", cfg.dailyTarget)) + "\n"
+		ret += "\n" + dateStyle.Render("Week Avg") + avgCalStyle.Render(fmt.Sprintf("%d", avg)) + avgTargetStyle.Render(fmt.Sprintf("/ %d", cfg.dailyTarget)) + "\n"
 	} else {
-		ret += "\n" + dateStyle.Render("Average") + avgCalStyle.Render(fmt.Sprintf("%d", avg)) + "\n"
+		ret += "\n" + dateStyle.Render("Week Avg") + avgCalStyle.Render(fmt.Sprintf("%d", avg)) + "\n"
 	}
 
 	return ret
